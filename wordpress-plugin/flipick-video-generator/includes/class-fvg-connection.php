@@ -40,7 +40,7 @@ final class FVG_Connection {
             ]);
             if (is_wp_error($result)) {
                 self::delete_rest_key($key['id']);
-                return $result;
+                return self::explain($result);
             }
             $body = $result['body'];
             if (empty($body['installKey']) || empty($body['secret'])) {
@@ -57,6 +57,20 @@ final class FVG_Connection {
             FVG_Logger::error('Connect failed', ['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
             return new WP_Error('fvg_exception', $e->getMessage());
         }
+    }
+
+    /** Turns a transport error into advice the merchant can act on. */
+    private static function explain(WP_Error $error) {
+        $code = $error->get_error_code();
+        $hint = '';
+        if ($code === 'fvg_unreachable') {
+            $hint = __('Check that the adapter is running and that this server can reach the address. In Docker, use host.docker.internal instead of localhost.', 'flipick-video-generator');
+        } elseif ($code === 'fvg_adapter_404' || $code === 'fvg_adapter_405') {
+            $hint = __('That address answered, but it is not the Flipick adapter. Check the Adapter URL (no extra path, correct port).', 'flipick-video-generator');
+        } elseif (strpos((string) $code, 'fvg_adapter_5') === 0) {
+            $hint = __('The adapter reported an internal error. Try again, and check its logs.', 'flipick-video-generator');
+        }
+        return $hint === '' ? $error : new WP_Error($code, $error->get_error_message() . ' — ' . $hint, $error->get_error_data());
     }
 
     /** @return true */
