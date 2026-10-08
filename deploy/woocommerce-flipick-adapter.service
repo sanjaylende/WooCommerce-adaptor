@@ -1,0 +1,14 @@
+[Unit]
+Description=WooCommerce Flipick Adapter (dev)
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/var/www/html/woocommerce-adapter-main
+ExecStart=/bin/bash /var/www/html/woocommerce-adapter-main/deploy/start.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
