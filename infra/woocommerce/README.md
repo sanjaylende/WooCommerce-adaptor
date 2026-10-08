@@ -55,7 +55,7 @@ rm .env.local                                # then ./setup.sh creates fresh key
 | `rest_no_route` / 404 on `/wp-json/...` | Pretty permalinks off: `docker compose --env-file .env run --rm -T wpcli wp rewrite structure '/%postname%/' --hard` |
 | 401 `woocommerce_rest_cannot_view` over http | WooCommerce accepts Basic / query keys only over HTTPS. Use OAuth 1.0a (the adapter does automatically for `http://`) |
 | HTML instead of JSON | A security plugin or host rule is intercepting `/wp-json`; test `curl -I http://localhost:8085/wp-json/` |
-| Webhooks never arrive | Run `wp action-scheduler run --force`; from inside Docker the adapter is `host.docker.internal:4300`, not `localhost`. Check WooCommerce → Status → Logs → `webhooks-delivery` |
+| Webhooks never arrive | Run `wp action-scheduler run --force`; from inside Docker the adapter is `host.docker.internal:4300`, not `localhost`. Check WooCommerce → Status → Logs → `webhooks-delivery` (WooCommerce's own log; the plugin's log is under WooCommerce → Video Generator → Logs) |
 | "A valid URL was not provided" on delivery | WordPress blocks private hosts and odd ports; the plugin allows the adapter host only when `WP_ENVIRONMENT_TYPE=local` (set by this compose file) |
 | Port already in use | Change `WP_PORT` / `PMA_PORT` in `.env` and `WP_SITE_URL` to match, then `docker compose --env-file .env up -d` |
 | Site URL changed | Update `WP_SITE_URL` in `.env`, run `./setup.sh` (it rewrites `home` / `siteurl`) |

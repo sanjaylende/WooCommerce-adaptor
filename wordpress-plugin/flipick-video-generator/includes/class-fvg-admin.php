@@ -14,6 +14,7 @@ final class FVG_Admin {
         add_action('admin_post_fvg_resync', [$this, 'handle_resync']);
         add_action('admin_post_fvg_refresh', [$this, 'handle_refresh']);
         add_action('admin_post_fvg_settings', [$this, 'handle_settings']);
+        add_action('admin_post_fvg_download_log', [$this, 'handle_download_log']);
         add_filter('manage_edit-product_columns', [$this, 'column']);
         add_action('manage_product_posts_custom_column', [$this, 'column_content'], 10, 2);
         add_filter('post_row_actions', [$this, 'row_action'], 10, 2);
@@ -44,6 +45,7 @@ final class FVG_Admin {
             } else {
                 $this->render_connect_form();
             }
+            $this->render_logs();
             echo '</div>';
         } catch (Throwable $e) {
             FVG_Logger::error('Admin page failed to render', ['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
@@ -74,6 +76,59 @@ final class FVG_Admin {
             FVG_Logger::error('Billing page failed to render', ['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
             echo '<div class="notice notice-error"><p>' . esc_html__('Something went wrong. Details are in WooCommerce > Status > Logs (flipick-video-generator).', 'flipick-video-generator') . '</p></div>';
         }
+    }
+
+    /** Log files: the live one and the zipped archives, newest first, each downloadable by administrators only. */
+    private function render_logs() {
+        $dir = FVG_Logger::directory();
+        $files = [];
+        foreach ((array) glob($dir . '/' . FVG_Logger::SOURCE . '*') as $path) {
+            if (is_file($path) && self::is_log_name(basename($path))) {
+                $files[] = ['name' => basename($path), 'size' => (int) filesize($path), 'time' => (int) filemtime($path)];
+            }
+        }
+        usort($files, function ($x, $y) { return $y['time'] <=> $x['time']; });
+        ?>
+        <details style="margin:12px 0">
+            <summary><strong><?php esc_html_e('Logs', 'flipick-video-generator'); ?></strong>
+                <span class="description">(<?php esc_html_e('rotated daily at 00:05 and whenever a file passes 10 MB; old files are zipped', 'flipick-video-generator'); ?>)</span></summary>
+            <?php if (!$files) : ?>
+                <p><?php esc_html_e('No log files yet.', 'flipick-video-generator'); ?></p>
+            <?php else : ?>
+                <table class="widefat striped" style="max-width:720px">
+                    <thead><tr><th><?php esc_html_e('File', 'flipick-video-generator'); ?></th><th><?php esc_html_e('Size', 'flipick-video-generator'); ?></th><th><?php esc_html_e('Last written', 'flipick-video-generator'); ?></th></tr></thead>
+                    <tbody>
+                    <?php foreach (array_slice($files, 0, 60) as $f) : ?>
+                        <tr>
+                            <td><a href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=fvg_download_log&file=' . rawurlencode($f['name'])), 'fvg_download_log')); ?>"><?php echo esc_html($f['name']); ?></a></td>
+                            <td><?php echo esc_html(size_format($f['size'])); ?></td>
+                            <td><?php echo esc_html(wp_date(get_option('date_format') . ' ' . get_option('time_format'), $f['time'])); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </details>
+        <?php
+    }
+
+    private static function is_log_name($name) {
+        return (bool) preg_match('/^flipick-video-generator(-\d{4}-\d{2}-\d{2}(-\d{6})?(-\d+)?)?\.(log|zip|log\.gz)$/', $name);
+    }
+
+    public function handle_download_log() {
+        $this->guard('fvg_download_log');
+        $name = isset($_GET['file']) ? basename((string) wp_unslash($_GET['file'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- checked in guard()
+        $path = FVG_Logger::directory() . '/' . $name;
+        if (!self::is_log_name($name) || !is_file($path)) {
+            wp_die(esc_html__('Log file not found.', 'flipick-video-generator'), '', ['response' => 404]);
+        }
+        nocache_headers();
+        header('Content-Type: ' . (substr($name, -4) === '.log' ? 'text/plain; charset=utf-8' : 'application/octet-stream'));
+        header('Content-Disposition: attachment; filename="' . $name . '"');
+        header('Content-Length: ' . filesize($path));
+        readfile($path);
+        exit;
     }
 
     private function render_settings() {

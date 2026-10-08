@@ -71,7 +71,9 @@ Every error is a `WooApiError` (`status`, `wooCode`, `retriable`). Logs never co
 ## Logging
 
 Adapter: `LOG_LEVEL` (debug/info/warn/error), `LOG_FORMAT=json` for log shippers; each request logs one line with a request id (also sent back as `X-Request-Id`); secrets are redacted.
-Plugin: WooCommerce → Status → Logs, source `flipick-video-generator`.
+Plugin: `wp-content/uploads/flipick-video-generator-logs/`, listed under WooCommerce → Video Generator → Logs.
+
+Rotation (adapter and plugin alike): every day at **00:05:00** and **at once when a file passes 10 MB**, the file is zipped and a new one is started. Adapter files: `logs/app.log` and `logs/error.log`, settings `LOG_MAX_BYTES`, `LOG_ROTATE_AT`, `LOG_RETENTION_DAYS`.
 
 ## Known gaps versus Shopify / Magento
 

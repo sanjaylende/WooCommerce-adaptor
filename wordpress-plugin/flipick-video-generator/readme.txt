@@ -31,7 +31,7 @@ Product data is read by the adapter through the WooCommerce REST API; nothing is
 
 == Logs ==
 
-WooCommerce > Status > Logs, source `flipick-video-generator`. Secrets are never logged.
+wp-content/uploads/flipick-video-generator-logs/ (closed to the web; listed and downloadable under WooCommerce > Video Generator > Logs). Rotated every day at 00:05 (site timezone) and whenever a file passes 10 MB: the old file is zipped and a new one started. Secrets are never logged.
 
 == Changelog ==
 

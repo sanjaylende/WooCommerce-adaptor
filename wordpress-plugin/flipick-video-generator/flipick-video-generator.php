@@ -23,6 +23,7 @@ define('FVG_DIR', plugin_dir_path(__FILE__));
 define('FVG_META_VIDEO_URL', '_flipick_video_url');
 define('FVG_META_VIDEO_THUMB', '_flipick_video_thumb');
 
+require_once FVG_DIR . 'includes/class-fvg-log-rotator.php';
 require_once FVG_DIR . 'includes/class-fvg-logger.php';
 require_once FVG_DIR . 'includes/class-fvg-settings.php';
 require_once FVG_DIR . 'includes/class-fvg-adapter-client.php';
@@ -36,6 +37,9 @@ add_action('before_woocommerce_init', function () {
         \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', FVG_FILE, true);
     }
 });
+
+// Daily 00:05 log rotation (WP-Cron), independent of WooCommerce being active.
+FVG_Logger::register_cron();
 
 add_action('plugins_loaded', function () {
     try {
@@ -77,4 +81,5 @@ add_filter('http_allowed_safe_ports', function ($ports, $host) {
 
 register_deactivation_hook(__FILE__, function () {
     FVG_Logger::info('Plugin deactivated');
+    FVG_Logger::clear_schedule();
 });
