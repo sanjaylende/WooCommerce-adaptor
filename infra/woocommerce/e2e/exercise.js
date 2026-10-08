@@ -32,8 +32,13 @@ const msgOf = (res) => { const l = res.headers.get("location") || ""; return dec
   const login = await post(base + "/wp-login.php", { log: user, pwd: pass, "wp-submit": "Log In", testcookie: "1" });
   step("log in to wp-admin", login.status === 302 && [...jar.keys()].some((k) => k.startsWith("wordpress_logged_in")));
 
-  // 2. plugin page (not connected yet)
+  // 2. plugin page. A store that is already connected is disconnected first, so every run starts from the same place.
   let page = await (await http(base + "/wp-admin/admin.php?page=flipick-video-generator")).text();
+  if (/fvg_disconnect/.test(page)) {
+    const d = await post(base + "/wp-admin/admin-post.php", { action: "fvg_disconnect", _wpnonce: nonceFor(page, "fvg_disconnect") });
+    step("disconnect the already connected store", /disconnected/i.test(msgOf(d)), msgOf(d));
+    page = await (await http(base + "/wp-admin/admin.php?page=flipick-video-generator")).text();
+  }
   step("plugin menu opens and shows the connect form", /Connect store/.test(page) && /Adapter URL/.test(page));
 
   // 3. connect
