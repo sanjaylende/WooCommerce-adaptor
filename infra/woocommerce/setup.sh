@@ -57,6 +57,8 @@ wp option update woocommerce_default_country "${WC_COUNTRY}"
 wp option update woocommerce_prices_include_tax "${WC_PRICES_INCLUDE_TAX}"
 wp option update woocommerce_calc_taxes "no"
 wp option update woocommerce_manage_stock "yes"
+# A new store starts in "Coming soon" mode: visitors (and the product-page video) are hidden until it is launched.
+wp option update woocommerce_coming_soon "no"
 wp option update woocommerce_onboarding_profile '{"skipped":true}' --format=json >/dev/null 2>&1 || true
 wp option update woocommerce_task_list_hidden "yes" >/dev/null 2>&1 || true
 
@@ -125,4 +127,4 @@ wp eval '
 log "Done"
 echo "Store:   ${WP_SITE_URL}   admin: ${WP_ADMIN_USER} / (see .env)"
 echo "API:     ${WP_SITE_URL}/wp-json/wc/v3/products  (keys in .env.local)"
-echo "Verify:  ./verify.sh"
+echo "Verify:  node verify.js"
