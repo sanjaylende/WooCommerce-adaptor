@@ -1,125 +1,16 @@
-# Deploying to a RHEL 9 server
+# Deploying
 
-Runbook for running this adapter on a RHEL 9 box behind nginx + TLS, as a
-systemd service. Run all `sudo` steps on the RHEL server itself (SSH in
-first) — nothing here runs against your WooCommerce/Flipick accounts remotely,
-it's all local server setup.
+The earlier runbook in this file described a single-store setup run as `ec2-user` (and `deploy/deploy.sh`, `deploy/start.sh` and
+the `ec2-user` service unit were removed with it). Use these instead:
 
-## 1. Install Node.js 22.9+
-
-`--use-system-ca` (see `package.json`'s `start` script) requires Node
-**22.9 or newer**. RHEL 9's own `dnf module` stream may lag behind that, so
-use the NodeSource repo instead:
-
-```bash
-curl -fsSL https://rpm.nodesource.com/setup_22.x | sudo bash -
-sudo dnf install -y nodejs
-node --version   # confirm >= 22.9.0
-```
-
-## 2. Create a dedicated service user
-
-```bash
-sudo useradd -r -m -d /opt/woocommerce-flipick-adapter -s /sbin/nologin flipick
-```
-
-## 3. Ship the code to the server
-
-From your machine (adjust user@host):
-
-```bash
-rsync -avz --exclude node_modules --exclude .env --exclude data \
-  d:/Projects/woocommerce-adapter-main/ user@your-rhel-host:/tmp/woocommerce-flipick-adapter/
-```
-
-On the server:
-
-```bash
-sudo mkdir -p /opt/woocommerce-flipick-adapter
-sudo rsync -a /tmp/woocommerce-flipick-adapter/ /opt/woocommerce-flipick-adapter/
-sudo chown -R flipick:flipick /opt/woocommerce-flipick-adapter
-cd /opt/woocommerce-flipick-adapter
-sudo -u flipick npm install --omit=dev
-```
-
-## 4. Create `.env` directly on the server
-
-Don't ship your local `.env` over rsync/scp as a habit — create it fresh on
-the box (`sudo -u flipick vi /opt/woocommerce-flipick-adapter/.env`), same keys
-as `.env.example`, plus:
-
-```
-PORT=4300
-PUBLIC_BASE_URL=https://your.domain.com
-```
-
-`PUBLIC_BASE_URL` must be the real public HTTPS address (set up in step 6)
-— it's what gets registered as the Flipick Video Engine's webhook callback
-URL for Hero Product/Image Transitions jobs.
-
-## 5. Smoke-test manually before wiring up systemd
-
-```bash
-cd /opt/woocommerce-flipick-adapter
-sudo -u flipick npm start
-# in another shell:
-curl -X POST http://127.0.0.1:4300/api/refresh
-```
-
-Confirm you get back `{"ok":true,"count":N}`, then Ctrl+C the manual run.
-
-## 6. systemd service
-
-```bash
-sudo cp deploy/woocommerce-flipick-adapter.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now woocommerce-flipick-adapter
-sudo systemctl status woocommerce-flipick-adapter
-journalctl -u woocommerce-flipick-adapter -f
-```
-
-## 7. nginx reverse proxy + TLS
-
-```bash
-sudo dnf install -y nginx
-sudo systemctl enable --now nginx
-sudo cp deploy/nginx-woocommerce-flipick-adapter.conf /etc/nginx/conf.d/woocommerce-flipick-adapter.conf
-sudo sed -i 's/your.domain.com/YOUR_REAL_DOMAIN/' /etc/nginx/conf.d/woocommerce-flipick-adapter.conf
-sudo nginx -t && sudo systemctl reload nginx
-
-sudo dnf install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d YOUR_REAL_DOMAIN
-```
-
-Certbot rewrites the nginx config in place to add the HTTPS server block and
-an HTTP→HTTPS redirect.
-
-## 8. Firewall + SELinux (RHEL 9 defaults: firewalld + SELinux enforcing)
-
-```bash
-sudo firewall-cmd --permanent --add-service=http --add-service=https
-sudo firewall-cmd --reload
-# Don't open 4300 externally -- only nginx (via 80/443) should be reachable.
-
-# Lets nginx's SELinux context (httpd_t) make outbound connections to the
-# adapter's local port -- without this, nginx's proxy_pass to 127.0.0.1:4300
-# fails with a 502 even though the service itself is healthy.
-sudo setsebool -P httpd_can_network_connect 1
-```
-
-## 9. Verify end to end
-
-```bash
-curl -X POST https://YOUR_REAL_DOMAIN/api/refresh
-```
-
-Same `{"ok":true,"count":N}` response as the local test, now over the real
-public URL — this is also the URL Flipick's Video Engine will call back to.
-
-## Updating a deployed instance
-
-```bash
-rsync -avz --exclude node_modules --exclude .env --exclude data \
-  d:/Projects/woocommerce-adapter-main/ user@your-rhel-host:/tmp/woocommerce-flipick-adapter/
-ssh user@your-rhel-host 'sudo rsync -a --exclude .env --exclude data /tmp/woocommerce-flipick-adapter/ /opt/woocommerce-flipick-adapter/ && cd /opt/woocommerce-flipick-adapter && sudo -u flipick npm install --omit=dev && sudo systemctl restart woocommerce-flipick-adapter'
-```
+| What | Where |
+|---|---|
+| Architecture, configuration (`.env.example`), WooCommerce specifics | `README.md` and `docs/adapters/woocommerce.md` |
+| Local WooCommerce + WordPress test stack | `infra/woocommerce/README.md` |
+| Hardened service unit (`/opt/flipick-woocommerce-adapter`) | `deploy/systemd/flipick-woocommerce-adapter.service` |
+| nginx in front, Cloudflare-only access, admin and callback allow-lists | `deploy/nginx/` and `docs/security/CLOUDFLARE-SETUP.md` |
+| Database TLS, roles, `pg_hba.conf` | `docs/security/DATABASE.md` |
+| Backups and the monthly restore test | `scripts/backup/` and `docs/security/OPERATIONS.md` |
+| Alerts and monitoring | `docs/security/ALERT-RULES.md` |
+| Host protection (file-change monitoring, antivirus, brute-force blocking) | `docs/security/HOST-PROTECTION.md` |
+| Reporting a vulnerability | `docs/security/REPORTING.md` and `/.well-known/security.txt` |

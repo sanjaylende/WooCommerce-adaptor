@@ -56,6 +56,15 @@ describe("security hardening", () => {
       }
     });
 
+    it("/.well-known/security.txt says where to report a problem and when the file expires", async () => {
+      const res = await get("/.well-known/security.txt");
+      assert.equal(res.status, 200);
+      assert.ok(res.headers.get("content-type").startsWith("text/plain"));
+      const body = await res.text();
+      assert.match(body, /^Contact: (mailto:|https:)/m);
+      assert.match(body, /^Expires: [0-9]{4}-[0-9]{2}-[0-9]{2}T/m);
+    });
+
     it("API and staff pages are never cached", async () => {
       assert.equal((await get("/api/bootstrap")).headers.get("cache-control"), "no-store");
       assert.equal((await get("/admin/login")).headers.get("cache-control"), "no-store");

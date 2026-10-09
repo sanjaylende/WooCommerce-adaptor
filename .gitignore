@@ -152,3 +152,7 @@ data/
 # Local WooCommerce stack: real values and generated keys
 infra/woocommerce/.env
 infra/woocommerce/.env.local
+
+# Generated SBOM and local backups
+sbom.cdx.json
+backups/
