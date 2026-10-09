@@ -156,3 +156,6 @@ infra/woocommerce/.env.local
 # Generated SBOM and local backups
 sbom.cdx.json
 backups/
+test-journeys/*.png
+test-journeys/*.zip
+test-journeys/*results*.json
