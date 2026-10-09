@@ -28,6 +28,7 @@ function scrub(text) {
     .replace(/(consumer_(?:key|secret)=)[^&\s"']+/gi, "$1[redacted]")        // WooCommerce key pair in a query string
     .replace(/(oauth_[a-z_]+(?:=|%3D))[^&\s"']+/gi, "$1[redacted]")             // OAuth 1.0a: consumer key, nonce, signature, timestamp in a signed URL
     .replace(/((?:access_?token|api_?key|token|secret|password|signature|secure_?hash|authorization)["']?\s*[=:]\s*["']?)(?!\[redacted\]|Bearer \[redacted\])[^&\s"',}]+/gi, "$1[redacted]")
+    .replace(/(\/(?:dl|img|invoice)\/)[A-Za-z0-9_.-]{10,}/g, "$1[token]")                        // signed links carry a token in the path
     .replace(/\b(fk_[A-Za-z0-9_-]{4})[A-Za-z0-9_-]{6,}/g, "$1[redacted]")                       // install keys
     .replace(/([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/g, "$1***@$2"); // e-mail addresses
 }
