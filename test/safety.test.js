@@ -51,3 +51,8 @@ test("the real process exits with a clear message when started in production wit
   assert.notEqual(run.status, 0);
   assert.match(run.stdout + run.stderr, /Refusing to start/);
 });
+
+test("production refuses an unverified database connection (DB_SSL=no-verify)", () => {
+  assert.throws(() => assertSafeConfig({ ...good, DB_SSL: "no-verify" }), /DB_SSL=no-verify is not allowed/);
+  assert.doesNotThrow(() => assertSafeConfig({ ...good, DB_SSL: "require" }));
+});

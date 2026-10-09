@@ -20,6 +20,9 @@ function productionProblems(env = process.env) {
     if (!value) problems.push(`${name} must be set in production (the built-in defaults are for local development only).`);
     else if (/_local@/.test(value)) problems.push(`${name} still uses a development password.`);
   }
+  if (String(env.DB_SSL) === "no-verify") {
+    problems.push("DB_SSL=no-verify is not allowed in production: the database server certificate must be verified (DB_SSL=require, DB_SSL_CA for a private CA).");
+  }
   if (String(env.DB_SSL || "disable") !== "require" && !/@(127\.0\.0\.1|localhost|\[::1\])[:/]/.test(String(env.DATABASE_URL || ""))) {
     problems.push("DB_SSL=require is needed when the database is on another host.");
   }
