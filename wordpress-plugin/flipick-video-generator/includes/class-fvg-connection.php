@@ -19,7 +19,11 @@ final class FVG_Connection {
             if ($adapter_url === '' || !filter_var($adapter_url, FILTER_VALIDATE_URL) || !in_array(wp_parse_url($adapter_url, PHP_URL_SCHEME), ['http', 'https'], true)) {
                 return new WP_Error('fvg_bad_url', __('Enter a valid adapter URL, for example https://video.example.com', 'flipick-video-generator'));
             }
-            FVG_Settings::update(['adapter_url' => $adapter_url, 'adapter_public_url' => esc_url_raw(trim((string) $public_url))]);
+            $public_url = esc_url_raw(trim((string) $public_url));
+            if ($public_url !== '' && !in_array(wp_parse_url($public_url, PHP_URL_SCHEME), ['http', 'https'], true)) {
+                $public_url = '';
+            }
+            FVG_Settings::update(['adapter_url' => $adapter_url, 'adapter_public_url' => $public_url]);
             FVG_Logger::info('Connecting to adapter', ['adapter' => $adapter_url]);
 
             $key = self::create_rest_key();

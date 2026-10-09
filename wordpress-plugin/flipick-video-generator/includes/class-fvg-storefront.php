@@ -19,6 +19,13 @@ final class FVG_Storefront {
 
     private function markup($product_id) {
         try {
+            // The shortcode takes any id: never reveal the video of a draft, private or password-protected product.
+            if (get_post_status($product_id) !== 'publish' && !current_user_can('read_post', $product_id)) {
+                return '';
+            }
+            if (post_password_required($product_id)) {
+                return '';
+            }
             $url = (string) get_post_meta($product_id, FVG_META_VIDEO_URL, true);
             // Only absolute http(s) URLs: the meta is written through the REST API, never trusted as markup.
             if ($url === '' || !wp_http_validate_url($url) || !in_array(wp_parse_url($url, PHP_URL_SCHEME), ['http', 'https'], true)) {

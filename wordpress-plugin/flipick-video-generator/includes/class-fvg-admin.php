@@ -124,6 +124,7 @@ final class FVG_Admin {
             wp_die(esc_html__('Log file not found.', 'flipick-video-generator'), '', ['response' => 404]);
         }
         nocache_headers();
+        header('X-Content-Type-Options: nosniff');
         header('Content-Type: ' . (substr($name, -4) === '.log' ? 'text/plain; charset=utf-8' : 'application/octet-stream'));
         header('Content-Disposition: attachment; filename="' . $name . '"');
         header('Content-Length: ' . filesize($path));
@@ -231,8 +232,8 @@ final class FVG_Admin {
     public function handle_connect() {
         $this->guard('fvg_connect');
         $result = FVG_Connection::connect(
-            isset($_POST['adapter_url']) ? wp_unslash($_POST['adapter_url']) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-            isset($_POST['public_url']) ? wp_unslash($_POST['public_url']) : '' // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+            isset( $_POST['adapter_url'] ) ? wp_unslash( $_POST['adapter_url'] ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput -- nonce checked in guard(); sanitised by esc_url_raw() in FVG_Connection::connect()
+            isset( $_POST['public_url'] ) ? wp_unslash( $_POST['public_url'] ) : '' // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput -- nonce checked in guard(); sanitised by esc_url_raw() in FVG_Connection::connect()
         );
         if (is_wp_error($result)) {
             $this->back(sprintf(__('Could not connect: %s', 'flipick-video-generator'), $result->get_error_message()), 'error');
@@ -267,9 +268,9 @@ final class FVG_Admin {
 
     public function handle_settings() {
         $this->guard('fvg_settings');
-        $adapter = esc_url_raw(trim((string) wp_unslash($_POST['adapter_url'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification
-        $public = esc_url_raw(trim((string) wp_unslash($_POST['public_url'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification
-        if ($adapter === '' || !filter_var($adapter, FILTER_VALIDATE_URL)) {
+        $adapter = esc_url_raw(trim((string) wp_unslash($_POST['adapter_url'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked in guard()
+        $public = esc_url_raw(trim((string) wp_unslash($_POST['public_url'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked in guard()
+        if ($adapter === '' || !filter_var($adapter, FILTER_VALIDATE_URL) || !in_array(wp_parse_url($adapter, PHP_URL_SCHEME), ['http', 'https'], true) || ($public !== '' && !in_array(wp_parse_url($public, PHP_URL_SCHEME), ['http', 'https'], true))) {
             $this->back(__('Enter a valid adapter URL.', 'flipick-video-generator'), 'error');
         }
         FVG_Settings::update(['adapter_url' => $adapter, 'adapter_public_url' => $public]);

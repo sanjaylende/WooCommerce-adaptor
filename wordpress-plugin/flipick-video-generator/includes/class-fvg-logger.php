@@ -131,7 +131,7 @@ final class FVG_Logger {
         }
         $out = [];
         foreach ($value as $k => $v) {
-            $out[$k] = (is_string($k) && preg_match('/(secret|token|password|authorization|signature|consumer|credential|key)/i', $k)) ? '[redacted]' : self::redact($v);
+            $out[$k] = (is_string($k) && preg_match('/(secret|token|password|authorization|signature|consumer|credential|key|install)/i', $k)) ? '[redacted]' : self::redact($v);
         }
         return $out;
     }

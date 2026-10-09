@@ -21,6 +21,7 @@ try {
     // Never block an uninstall.
 }
 delete_option(FVG_Settings::OPTION);
+delete_transient('fvg_video_states');
 FVG_Logger::clear_schedule();
 // The plugin's own log folder goes with it.
 $fvg_log_dir = FVG_Logger::directory();
