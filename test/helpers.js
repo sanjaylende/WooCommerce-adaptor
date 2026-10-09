@@ -3,8 +3,8 @@ const http = require("http");
 const crypto = require("crypto");
 const { Client } = require("pg");
 
-const ADAPTER_PORT = 45123;
-const WOO_PORT = 45124;
+const ADAPTER_PORT = 45223;
+const WOO_PORT = 45224;
 const DB_NAME = "woocommerce_adapter_test";
 const OWNER = "postgresql://adapter_owner:adapter_owner_local@127.0.0.1:5435";
 
