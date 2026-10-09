@@ -24,22 +24,22 @@ masked before anything is written. Use the rules below with free tools: Grafana 
 
 ```yaml
 groups:
-  - name: flipick-adapter
+  - name: flipick-woocommerce-adapter
     rules:
       - alert: StaffAccountLocked
-        expr: count_over_time({job="flipick-adapter"} |= "Staff account locked" [10m]) > 0
+        expr: count_over_time({job="flipick-woocommerce-adapter"} |= "Staff account locked" [10m]) > 0
         labels: { severity: warning }
       - alert: AuthRefusedBurst            # 20+ refused requests in 5 minutes from the log
-        expr: sum(count_over_time({job="flipick-adapter"} |= "Auth refused" [5m])) > 20
+        expr: sum(count_over_time({job="flipick-woocommerce-adapter"} |= "Auth refused" [5m])) > 20
         labels: { severity: warning }
       - alert: ServerErrors                # 5xx burst
-        expr: sum(count_over_time({job="flipick-adapter"} | json | level="error" [5m])) > 10
+        expr: sum(count_over_time({job="flipick-woocommerce-adapter"} | json | level="error" [5m])) > 10
         labels: { severity: critical }
       - alert: BankCallbackForged
-        expr: count_over_time({job="flipick-adapter"} |= "Gateway callback rejected" [15m]) > 3
+        expr: count_over_time({job="flipick-woocommerce-adapter"} |= "Gateway callback rejected" [15m]) > 3
         labels: { severity: critical }
       - alert: CrashLoop
-        expr: count_over_time({job="flipick-adapter"} |= "WooCommerce adapter running at" [10m]) > 3
+        expr: count_over_time({job="flipick-woocommerce-adapter"} |= "WooCommerce adapter running at" [10m]) > 3
         labels: { severity: critical }
 ```
 
@@ -57,7 +57,7 @@ Limits are `HEALTH_PENDING_MINUTES` (default 30) and `HEALTH_REFUND_DAYS` (defau
 
 ## fail2ban: block addresses that keep failing
 
-`/etc/fail2ban/filter.d/flipick-adapter.conf`
+`/etc/fail2ban/filter.d/flipick-woocommerce-adapter.conf`
 
 ```
 [Definition]
@@ -67,13 +67,13 @@ failregex = "message":"Auth refused:.*"ip":"<HOST>"
 datepattern = "time":"%%Y-%%m-%%dT%%H:%%M:%%S
 ```
 
-`/etc/fail2ban/jail.d/flipick-adapter.local`
+`/etc/fail2ban/jail.d/flipick-woocommerce-adapter.local`
 
 ```
-[flipick-adapter]
+[flipick-woocommerce-adapter]
 enabled  = true
-filter   = flipick-adapter
-logpath  = /opt/flipick-adapter/app/logs/app.log
+filter   = flipick-woocommerce-adapter
+logpath  = /opt/flipick-woocommerce-adapter/app/logs/app.log
 maxretry = 20
 findtime = 300
 bantime  = 3600
