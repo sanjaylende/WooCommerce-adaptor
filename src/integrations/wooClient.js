@@ -13,6 +13,7 @@
 const crypto = require("crypto");
 const config = require("../config");
 const logger = require("../utils/logger");
+const { safeFetch } = require("../utils/safeFetch");
 
 const API_PREFIX = "/wp-json/wc/v3";
 const PER_PAGE = 100; // WooCommerce's hard maximum
@@ -73,13 +74,17 @@ function signOAuth(url, method, { key, secret }, nonce = crypto.randomBytes(12).
 // The one place a request leaves the process. Returns { data, headers, status }.
 async function wooRequestRaw(url, credentials, options = {}) {
   const {
-    method = "GET", body, maxRetries = config.woo.maxRetries, timeoutMs = config.woo.timeoutMs, fetchImpl = fetch, sleepImpl = sleep,
+    method = "GET", body, maxRetries = config.woo.maxRetries, timeoutMs = config.woo.timeoutMs, fetchImpl, sleepImpl = sleep,
   } = options;
   const { key, secret } = parseCredentials(credentials);
   const mode = resolveAuthMode(url);
   const baseHeaders = { Accept: "application/json", "User-Agent": "Flipick-WooCommerce-Adapter/1.0" };
   if (body !== undefined) baseHeaders["Content-Type"] = "application/json";
   const parsed = new URL(url);
+  // Every call to the store goes through safeFetch: https only in production, public addresses only in production (checked again at
+  // connect time), no redirects (the key, and for query mode the secret in the address, must never follow one to another host),
+  // a size cap, and a timeout. `fetchImpl` exists for tests only.
+  const send = fetchImpl || ((target, init) => safeFetch(target, init, { maxRedirects: 0, maxBytes: 64 * 1024 * 1024, timeoutMs }));
   const safeUrl = `${parsed.origin}${parsed.pathname}`; // never log the query string: it may carry credentials
 
   // A write is only retried on 429 (rejected before it ran); reads also retry network failures and 502/503/504.
@@ -93,8 +98,15 @@ async function wooRequestRaw(url, credentials, options = {}) {
     else { target.searchParams.set("consumer_key", key); target.searchParams.set("consumer_secret", secret); }
     let res;
     try {
-      res = await fetchImpl(target, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(timeoutMs) });
+      res = await send(target, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(timeoutMs) });
     } catch (err) {
+      // An address the adapter refuses to call (private network, plain http in production, a redirect) is a final answer, not a glitch.
+      const refused = err && (err.name === "OutboundError" || err.name === "BlockedAddressError" || (err.cause && err.cause.name === "BlockedAddressError"));
+      if (refused) {
+        const reason = err.cause?.message || err.message;
+        logger.warn(`WooCommerce ${method} ${safeUrl} refused`, { reason });
+        throw new WooApiError(`Store address is not allowed: ${reason}`, { status: 400, cause: err });
+      }
       const timedOut = err && (err.name === "TimeoutError" || err.name === "AbortError");
       const retry = method === "GET" && attempt < maxRetries;
       logger.warn(`WooCommerce ${method} ${safeUrl} ${timedOut ? "timed out" : "network error"}`, { attempt, willRetry: retry, error: err.message });
