@@ -132,6 +132,16 @@ describe("platform", () => {
       assert.equal(a1.body.billing.currentPlan, "trial");
     });
 
+    it("the line under \"Select products\" is the site name only, without the store address", async () => {
+      const a1 = await h.api("GET", "/api/bootstrap", { token: sessionA1 });
+      const a2 = await h.api("GET", "/api/bootstrap", { token: sessionC1 });
+      for (const response of [a1, a2]) {
+        assert.ok(response.body.storeUrl.length > 0, "a name is shown");
+        assert.ok(!response.body.storeUrl.includes("http") && !response.body.storeUrl.includes("·"), `no address in "${response.body.storeUrl}"`);
+      }
+      assert.notEqual(a1.body.storeUrl, a2.body.storeUrl, "each site shows its own name");
+    });
+
     it("a new store starts on its own trial with its own counters", async () => {
       await ctx.runWithTenant(await ctxFor(A, 1), async () => {
         await db.query("SELECT 1");
