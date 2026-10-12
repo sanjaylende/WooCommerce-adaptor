@@ -54,7 +54,19 @@ function findMeta(product, key) {
 //
 // WooCommerce prices: regular_price is the list price, sale_price (when set and lower) the selling price. A sale shows
 // as an offer exactly like Magento's special_price.
-function normalizeProduct(product, variation, { currencyCode } = {}) {
+// One entry per variation (all of them, not just the one that supplies the product's own price): { id, title, price, compareAtPrice }.
+// Only used to offer one Price / MRP pair per variant in the overlay Variables picker.
+function variantsFrom(variations) {
+  return (variations || []).map((v) => {
+    const regular = toNumber(v.regular_price) ?? toNumber(v.price);
+    const sale = toNumber(v.sale_price);
+    const onSale = sale != null && regular != null && sale < regular;
+    const parts = (Array.isArray(v.attributes) ? v.attributes : []).map((a) => decodeEntities(a.option || "")).filter(Boolean);
+    return { id: v.id, title: parts.join(" / ") || `Variant ${v.id}`, price: onSale ? sale : regular, compareAtPrice: onSale ? regular : null };
+  });
+}
+
+function normalizeProduct(product, variation, { currencyCode, variations } = {}) {
   const priceSource = variation || product;
   const regularPrice = toNumber(priceSource.regular_price) ?? toNumber(priceSource.price);
   const salePrice = toNumber(priceSource.sale_price);
@@ -64,6 +76,7 @@ function normalizeProduct(product, variation, { currencyCode } = {}) {
 
   return {
     uniqueTag: `woo-${product.id}-${variation?.id ?? "novariant"}`,
+    variants: variantsFrom(variations),
     wooProductId: String(product.id),
     sku: product.sku || "",
     name: decodeEntities(product.name),
@@ -87,7 +100,8 @@ function normalizeProduct(product, variation, { currencyCode } = {}) {
 // have no price of their own, so they are skipped; a price-less row is dropped after normalisation.
 //
 // resolveVariation(product) is supplied by the caller and performs the I/O this module stays free of: fetching a variable
-// product's variations. A failure there is the caller's to handle; this function never throws for one bad product.
+// product's variations. It returns the variation that supplies the price, or { variation, variations } to also hand over every
+// variation (for the per-variant overlay options). A failure there is the caller's to handle; this function never throws for one bad product.
 async function normalizeProducts(wooProducts, resolveVariation, { currencyCode, onSkip } = {}) {
   const eligible = (wooProducts || [])
     .filter((p) => p && p.status === "publish")
@@ -97,8 +111,9 @@ async function normalizeProducts(wooProducts, resolveVariation, { currencyCode, 
   const normalized = [];
   for (const product of eligible) {
     try {
-      const variation = product.type === "variable" ? await resolveVariation(product) : null;
-      normalized.push(normalizeProduct(product, variation, { currencyCode }));
+      const resolved = product.type === "variable" ? await resolveVariation(product) : null;
+      const { variation, variations } = resolved && Object.prototype.hasOwnProperty.call(resolved, "variation") ? resolved : { variation: resolved, variations: resolved ? [resolved] : [] };
+      normalized.push(normalizeProduct(product, variation, { currencyCode, variations }));
     } catch (err) {
       // One broken product must not blank the whole catalog.
       if (onSkip) onSkip(product, err);

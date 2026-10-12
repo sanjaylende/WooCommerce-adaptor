@@ -47,8 +47,8 @@ function startFakeWooCommerce() {
   });
   const variable = simple(3, "Shirt", { type: "variable", price: "", regular_price: "", categories: [{ id: 6, name: "T-Shirts", slug: "t-shirts" }] });
   const variations = [
-    { id: 31, regular_price: "30", sale_price: "24", price: "24", stock_status: "outofstock", image: { src: "https://img.test/31.jpg" } },
-    { id: 32, regular_price: "32", sale_price: "", price: "32", stock_status: "instock", image: { src: "https://img.test/32.jpg" } },
+    { id: 31, attributes: [{ name: "Size", option: "S" }], regular_price: "30", sale_price: "24", price: "24", stock_status: "outofstock", image: { src: "https://img.test/31.jpg" } },
+    { id: 32, attributes: [{ name: "Size", option: "L" }], regular_price: "32", sale_price: "", price: "32", stock_status: "instock", image: { src: "https://img.test/32.jpg" } },
   ];
   const state = { flakyHits: 0, puts: [] };
   const seenNonces = new Set();

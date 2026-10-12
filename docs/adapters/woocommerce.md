@@ -89,3 +89,12 @@ Rotation (adapter and plugin alike): every day at **00:05:00** and **at once whe
 
 WooCommerce has no fixed rate limit; shared hosts throttle. The client reads 100 products per request and runs five variation fetches at once.
 A 1,000-product catalog with 200 variable products is about 10 + 200 requests on refresh. The refresh endpoint is limited to 6 per minute per store.
+
+## Generate Video modal (ported from the Shopify adapter, Oct 2026)
+
+- **Stills picker** for Hero Product (pick 1) and Image Transitions (pick 4, in order): the product's own photos, optional AI stills, **Upload Image** and **Change Image**. Photos come from `GET /api/product-images/:uniqueTag` (real address for the video engine, proxied address for the browser).
+- **Uploads are hosted by the adapter** (`POST /api/upload-still-image`, table `uploaded_images`, signed `/up/<token>` link, deleted after 8 days). Unlike Shopify they are *not* added to the store's own gallery: WooCommerce's REST keys cannot upload to the media library. Only real JPEG/PNG/GIF/WebP files are accepted (checked from the file's first bytes), 15 MB, 100 per store per day.
+- **Lifestyle prompt** defaults to the engine's real prompt (`GET /api/v2/video-engine/default-prompt`) and is sent with `prompt_is_final`. An engine without that route makes the field fall back to the old category placeholder.
+- **Variant-aware overlay variables**: a variable product offers one Price/MRP pair per variation ("S - Price", "L - Price") instead of the generic pair.
+- **Videos survive a tag change**: the product's `uniqueTag` follows the variation that supplies its price; after a refresh the slots move to the new tag.
+- Usage-cap enforcement was already local in this adapter (plans, usage and credit are tracked here, not asked from the platform), so the Shopify "enforce the cap locally" fix needed no change.

@@ -40,8 +40,8 @@ async function fetchProducts(baseUrl, credentials, options = {}) {
   const raw = await fetchAllProducts(baseUrl, credentials, options);
 
   const variable = raw.filter((p) => p && p.type === "variable" && p.status === "publish");
-  const picked = await mapWithConcurrency(variable, VARIATION_CONCURRENCY, async (p) => pickVariation(await fetchVariations(baseUrl, credentials, p.id, options)));
-  const variationByProduct = new Map(variable.map((p, i) => [p.id, picked[i]]));
+  const fetched = await mapWithConcurrency(variable, VARIATION_CONCURRENCY, (p) => fetchVariations(baseUrl, credentials, p.id, options));
+  const variationByProduct = new Map(variable.map((p, i) => [p.id, { variation: pickVariation(fetched[i]), variations: fetched[i] || [] }]));
 
   const products = await normalizeProducts(raw, (p) => variationByProduct.get(p.id) || null, {
     currencyCode: options.currencyCode,
@@ -73,12 +73,33 @@ function customAttributeValue(product, key) {
 
 // Fixed catalog plus the product's own attributes (Size, Color ...). They were captured during the catalog refresh, so this
 // needs no extra request to the store.
+// One Price (and MRP, if it is on sale) option per variation, e.g. "S - Price" / "L - Price", so the Variables picker can map more than one
+// variable to more than one variant's price in the same overlay. Only offered when the product really has more than one variation.
+function variantAttributeOptions(product) {
+  if (!Array.isArray(product.variants) || product.variants.length < 2) return [];
+  return product.variants.flatMap((variant) => {
+    const label = variant.title || `Variant ${variant.id}`;
+    const options = [];
+    if (variant.price != null) options.push({ key: `variant:${variant.id}:price`, label: `${label} - Price`, value: formatMoney(variant.price, product.currencyCode) });
+    if (variant.compareAtPrice != null && variant.price != null && variant.compareAtPrice > variant.price) {
+      options.push({ key: `variant:${variant.id}:mrp`, label: `${label} - MRP`, value: formatMoney(variant.compareAtPrice, product.currencyCode) });
+    }
+    return options;
+  });
+}
+
+// The first variation is the generic "Price"/"MRP" value; once a product has several, each is offered under its own name, so the generic
+// pair would only show the same number twice.
+const GENERIC_PRICE_KEYS = ["price", "mrp"];
+
 async function getProductAttributeOptions(product) {
+  const isMultiVariant = Array.isArray(product.variants) && product.variants.length > 1;
   const fixed = CUSTOM_ATTRIBUTE_OPTIONS
+    .filter((opt) => !(isMultiVariant && GENERIC_PRICE_KEYS.includes(opt.key)))
     .map((opt) => ({ key: opt.key, label: opt.label, value: customAttributeValue(product, opt.key) }))
     .filter((opt) => opt.value !== "");
   const own = (product.attributes || []).map((a) => ({ key: `attribute:${a.name}`, label: a.name, value: a.value }));
-  return [...fixed, ...own];
+  return [...fixed, ...variantAttributeOptions(product), ...own];
 }
 
 module.exports = { fetchProducts, getProductAttributeOptions, pickVariation };
