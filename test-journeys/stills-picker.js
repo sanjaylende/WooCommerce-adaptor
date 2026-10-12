@@ -93,6 +93,17 @@ const shot = (page, n) => page.screenshot({ path: path.join(DIR, n) });
     const generateEnabled = await frame.locator('.modal button.btn-primary', { hasText: /Generate/ }).first().isEnabled();
     ok('10b. The Generate button is enabled once the default prompt has loaded', generateEnabled);
     await shot(page, 'sp-4-lifestyle.png');
+    // ---- a merchant who leaves the picker while the photos are still loading must not cause an error
+    await frame.locator('.modal button', { hasText: /Cancel/ }).first().click().catch(() => {});
+    await page.waitForTimeout(500);
+    await frame.locator('button', { hasText: 'Generate video' }).first().click();
+    await frame.waitForSelector('.modal', { timeout: 30000 });
+    await frame.locator('.video-type-option', { hasText: 'Hero Product' }).locator('input').check();
+    await page.waitForTimeout(1500);
+    await frame.locator('.modal button.btn-primary', { hasText: /Generate/ }).first().click();
+    await frame.locator('.modal button', { hasText: /^Back$/ }).first().click({ timeout: 5000 }).catch(() => {}); // straight away, before the photos arrive
+    await page.waitForTimeout(3000);
+    ok('10c. Leaving the picker while photos are still loading causes no error', pageErrors.length === 0, pageErrors.join(' | '));
     ok('11. No JavaScript errors in the page', pageErrors.length === 0, pageErrors.join(' | '));
     const unexpected = refused.filter((r) => !/^415 POST \/api\/upload-still-image/.test(r)); // the one deliberate refusal: the fake image in step 8
     ok('12. The adapter refused nothing except the deliberately bad upload', unexpected.length === 0 && refused.length === 1, refused.join(' | '));

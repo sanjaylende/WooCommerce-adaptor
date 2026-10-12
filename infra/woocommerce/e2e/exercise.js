@@ -78,7 +78,7 @@ const msgOf = (res) => { const l = res.headers.get("location") || ""; return dec
   const pid = product.uniqueTag.split("-")[1];
 
   if (!process.env.SKIP_GENERATE) {
-    const g = await api("POST", "/api/generate", { uniqueTag: product.uniqueTag, videoType: "hero_product", aspectRatio: "16:9", prompt: "Fresh apples on a wooden table, soft morning light", startImageUrl: product.image });
+    const g = await api("POST", "/api/generate", { uniqueTag: product.uniqueTag, videoType: "hero_product", aspectRatio: "16:9", prompt: "Fresh apples on a wooden table, soft morning light", startImageUrl: product.imageSource || product.image });
     step("start Hero Product render", g.status === 200, JSON.stringify(g.body));
     const started = Date.now();
     let st = {};

@@ -55,10 +55,11 @@ let stage = 'start';
   await go.waitFor({ timeout: 30000 });
   await page.waitForTimeout(1500);
   await go.click();
-  const skip = frame.locator('button', { hasText: 'Skip preview, generate anyway' });
-  const use = frame.locator('button', { hasText: /Use this image|Use these/ });
-  await Promise.race([skip.waitFor({ timeout: 30000 }), use.waitFor({ timeout: 30000 }), frame.locator('.badge, .status-generating, [class*="generating"]').first().waitFor({ timeout: 30000 })]).catch(() => {});
-  if (await skip.count()) await skip.click(); else if (await use.count()) await use.first().click();
+  // Hero Product now opens the stills picker (the product's own photos): pick the first photo and confirm. (Old flow: 4 AI candidates.)
+  const tile = frame.locator('#productImagesRoot .preview-tile').first();
+  const skip = frame.locator('button', { hasText: /Skip preview, generate anyway|Skip, generate anyway/ });
+  await tile.waitFor({ timeout: 30000 }).catch(() => {}); // wait for the photos; the Skip button is already there while they load
+  if (await tile.count()) { await tile.click(); await frame.locator('#confirmStillsBtn').click(); } else if (await skip.count()) await skip.first().click();
   ok('5. Generate started from the UI (mock engine)', true);
   await shot(page, 'wj-2-generating.png');
 
