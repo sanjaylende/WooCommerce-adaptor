@@ -107,6 +107,49 @@ foreach ($variables as $v) {
     echo "Created variable product {$v['sku']}\n";
 }
 
+// Real product photos: seed/images/<SKU>.jpg. Applied to new and existing products alike (a product keeps its photo once the file's
+// checksum matches), and the earlier flat generated placeholders are removed. A few names are changed to match the photo.
+$photos = [
+    'FRU-APL-001' => 'Kashmiri Apples 1kg',
+    'FRU-BAN-001' => 'Robusta Bananas 1 dozen',
+    'DAI-MLK-001' => 'Whole Milk 1L',
+    'BAK-BRD-001' => 'White Bread Loaf',
+    'BEV-TEA-001' => 'Green Tea 25 Bags',
+    'APP-TEE-001' => 'Classic Cotton T-Shirt',
+    'APP-HOD-001' => 'Everyday Hoodie',
+];
+foreach ($photos as $sku => $display_name) {
+    $file = __DIR__ . '/images/' . $sku . '.jpg';
+    if (!is_readable($file)) {
+        $file = '/seed/images/' . $sku . '.jpg'; // wp eval-file runs from another folder inside the container
+    }
+    $pid = wc_get_product_id_by_sku($sku);
+    if (!$pid || !is_readable($file)) { continue; }
+    $prod = wc_get_product($pid);
+    $sum = md5_file($file);
+    if ($prod->get_name() !== $display_name) {
+        $prod->set_name($display_name);
+        $prod->set_slug('');
+        echo "Renamed {$sku} to {$display_name}\n";
+    }
+    if ($prod->get_meta('_fvg_seed_photo') !== $sum) {
+        $old = $prod->get_image_id();
+        $dir = wp_upload_dir();
+        $target = wp_unique_filename($dir['path'], sanitize_title($display_name) . '.jpg');
+        copy($file, trailingslashit($dir['path']) . $target);
+        $att = wp_insert_attachment(['post_mime_type' => 'image/jpeg', 'post_title' => $display_name, 'post_status' => 'inherit'], trailingslashit($dir['path']) . $target);
+        wp_update_attachment_metadata($att, wp_generate_attachment_metadata($att, trailingslashit($dir['path']) . $target));
+        $prod->set_image_id($att);
+        $prod->update_meta_data('_fvg_seed_photo', $sum);
+        if ($old) {
+            $old_file = get_attached_file($old);
+            if ($old_file && strpos(basename($old_file), 'seed-') === 0) { wp_delete_attachment($old, true); }
+        }
+        echo "Photo set for {$sku}\n";
+    }
+    $prod->save();
+}
+
 // Customers.
 $customers = [
     ['asha@example.test', 'Asha', 'Rao', 'Pune', 'IN', 'MH'],
