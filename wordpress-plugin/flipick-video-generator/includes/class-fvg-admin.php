@@ -13,13 +13,12 @@ final class FVG_Admin {
         add_action('admin_post_fvg_disconnect', [$this, 'handle_disconnect']);
         add_action('admin_post_fvg_resync', [$this, 'handle_resync']);
         add_action('admin_post_fvg_refresh', [$this, 'handle_refresh']);
-        add_action('admin_post_fvg_settings', [$this, 'handle_settings']);
         add_action('admin_post_fvg_download_log', [$this, 'handle_download_log']);
         add_filter('manage_edit-product_columns', [$this, 'column']);
         add_action('manage_product_posts_custom_column', [$this, 'column_content'], 10, 2);
         add_filter('post_row_actions', [$this, 'row_action'], 10, 2);
         add_filter('plugin_action_links_' . plugin_basename(FVG_FILE), function ($links) {
-            array_unshift($links, '<a href="' . esc_url(self::page_url()) . '">' . esc_html__('Video Generator', 'flipick-video-generator') . '</a>');
+            array_unshift($links, '<a href="' . esc_url(self::page_url()) . '">' . esc_html__('Flipick Video Generator', 'flipick-video-generator') . '</a>');
             return $links;
         });
     }
@@ -29,8 +28,7 @@ final class FVG_Admin {
     }
 
     public function menu() {
-        add_submenu_page('woocommerce', __('Video Generator', 'flipick-video-generator'), __('Video Generator', 'flipick-video-generator'), self::CAP, self::SLUG, [$this, 'render']);
-        add_submenu_page('woocommerce', __('Plans & Billing', 'flipick-video-generator'), __('Plans & Billing', 'flipick-video-generator'), self::CAP, self::SLUG . '-billing', [$this, 'render_billing']);
+        add_submenu_page('woocommerce', __('Flipick Video Generator', 'flipick-video-generator'), __('Flipick Video Generator', 'flipick-video-generator'), self::CAP, self::SLUG, [$this, 'render']);
     }
 
     public function render() {
@@ -49,31 +47,6 @@ final class FVG_Admin {
             echo '</div>';
         } catch (Throwable $e) {
             FVG_Logger::error('Admin page failed to render', ['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
-            echo '<div class="notice notice-error"><p>' . esc_html__('Something went wrong. Details are in WooCommerce > Status > Logs (flipick-video-generator).', 'flipick-video-generator') . '</p></div>';
-        }
-    }
-
-    /** Plans & Billing: the adapter's billing screens, framed in wp-admin (same as the Magento extension). */
-    public function render_billing() {
-        try {
-            if (!current_user_can(self::CAP)) {
-                wp_die(esc_html__('You do not have permission to open this page.', 'flipick-video-generator'));
-            }
-            echo '<div class="wrap"><h1>' . esc_html__('Plans & Billing', 'flipick-video-generator') . '</h1>';
-            $this->notices();
-            if (!FVG_Settings::is_connected()) {
-                echo '<p>' . sprintf(
-                    /* translators: %s: link */
-                    esc_html__('Connect this store first: %s', 'flipick-video-generator'),
-                    '<a href="' . esc_url(self::page_url()) . '">' . esc_html__('Video Generator', 'flipick-video-generator') . '</a>'
-                ) . '</p></div>';
-                return;
-            }
-            $src = FVG_Settings::adapter_public_url() . '/?embed=1&launch=' . rawurlencode(FVG_Adapter_Client::launch_token());
-            echo '<iframe title="' . esc_attr__('Plans & Billing', 'flipick-video-generator') . '" src="' . esc_url($src)
-                . '" style="width:100%;height:calc(100vh - 220px);min-height:600px;border:1px solid #c3c4c7;background:#fff"></iframe></div>';
-        } catch (Throwable $e) {
-            FVG_Logger::error('Billing page failed to render', ['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
             echo '<div class="notice notice-error"><p>' . esc_html__('Something went wrong. Details are in WooCommerce > Status > Logs (flipick-video-generator).', 'flipick-video-generator') . '</p></div>';
         }
     }
@@ -132,26 +105,6 @@ final class FVG_Admin {
         exit;
     }
 
-    private function render_settings() {
-        $s = FVG_Settings::all();
-        ?>
-        <details style="margin:12px 0">
-            <summary><strong><?php esc_html_e('Settings', 'flipick-video-generator'); ?></strong></summary>
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                <input type="hidden" name="action" value="fvg_settings">
-                <?php wp_nonce_field('fvg_settings'); ?>
-                <table class="form-table" role="presentation">
-                    <tr><th scope="row"><label for="fvg_s_adapter"><?php esc_html_e('Adapter URL (server-side)', 'flipick-video-generator'); ?></label></th>
-                        <td><input type="url" id="fvg_s_adapter" name="adapter_url" class="regular-text" required value="<?php echo esc_attr($s['adapter_url']); ?>"></td></tr>
-                    <tr><th scope="row"><label for="fvg_s_public"><?php esc_html_e('Adapter URL (browser)', 'flipick-video-generator'); ?></label></th>
-                        <td><input type="url" id="fvg_s_public" name="public_url" class="regular-text" value="<?php echo esc_attr($s['adapter_public_url']); ?>"></td></tr>
-                </table>
-                <?php submit_button(__('Save settings', 'flipick-video-generator'), 'secondary'); ?>
-            </form>
-        </details>
-        <?php
-    }
-
     private function notices() {
         // phpcs:ignore WordPress.Security.NonceVerification -- display only
         $msg = isset($_GET['fvg_msg']) ? sanitize_text_field(wp_unslash($_GET['fvg_msg'])) : '';
@@ -162,25 +115,12 @@ final class FVG_Admin {
     }
 
     private function render_connect_form() {
-        $s = FVG_Settings::all();
         ?>
         <p><?php esc_html_e('Connect this store to Flipick to generate product videos. This creates a WooCommerce API key for the adapter and registers your store.', 'flipick-video-generator'); ?></p>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="fvg_connect">
             <?php wp_nonce_field('fvg_connect'); ?>
-            <table class="form-table" role="presentation">
-                <tr>
-                    <th scope="row"><label for="fvg_adapter_url"><?php esc_html_e('Adapter URL', 'flipick-video-generator'); ?></label></th>
-                    <td><input type="url" id="fvg_adapter_url" name="adapter_url" class="regular-text" required value="<?php echo esc_attr($s['adapter_url']); ?>" placeholder="https://video.example.com">
-                        <p class="description"><?php esc_html_e('Address of the Flipick adapter as reachable from this server.', 'flipick-video-generator'); ?></p></td>
-                </tr>
-                <tr>
-                    <th scope="row"><label for="fvg_public_url"><?php esc_html_e('Browser URL (optional)', 'flipick-video-generator'); ?></label></th>
-                    <td><input type="url" id="fvg_public_url" name="public_url" class="regular-text" value="<?php echo esc_attr($s['adapter_public_url']); ?>">
-                        <p class="description"><?php esc_html_e('Only when the browser reaches the adapter at a different address (local development).', 'flipick-video-generator'); ?></p></td>
-                </tr>
-            </table>
-            <?php submit_button(__('Connect store', 'flipick-video-generator')); ?>
+            <?php submit_button(__('Connect to Flipick', 'flipick-video-generator')); ?>
         </form>
         <?php
     }
@@ -202,7 +142,6 @@ final class FVG_Admin {
             <?php $this->post_button('fvg_resync', __('Re-sync store', 'flipick-video-generator'), 'secondary small'); ?>
             <?php $this->post_button('fvg_disconnect', __('Disconnect', 'flipick-video-generator'), 'link-delete small', __('Disconnect this store from Flipick? Existing videos on product pages stay.', 'flipick-video-generator')); ?>
         </p>
-        <?php $this->render_settings(); ?>
         <iframe title="<?php esc_attr_e('Flipick Video Generator', 'flipick-video-generator'); ?>" src="<?php echo esc_url($src); ?>"
                 style="width:100%;height:calc(100vh - 220px);min-height:640px;border:1px solid #c3c4c7;background:#fff"></iframe>
         <?php
@@ -231,10 +170,7 @@ final class FVG_Admin {
 
     public function handle_connect() {
         $this->guard('fvg_connect');
-        $result = FVG_Connection::connect(
-            isset( $_POST['adapter_url'] ) ? wp_unslash( $_POST['adapter_url'] ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput -- nonce checked in guard(); sanitised by esc_url_raw() in FVG_Connection::connect()
-            isset( $_POST['public_url'] ) ? wp_unslash( $_POST['public_url'] ) : '' // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput -- nonce checked in guard(); sanitised by esc_url_raw() in FVG_Connection::connect()
-        );
+        $result = FVG_Connection::connect();
         if (is_wp_error($result)) {
             $this->back(sprintf(__('Could not connect: %s', 'flipick-video-generator'), $result->get_error_message()), 'error');
         }
@@ -264,18 +200,6 @@ final class FVG_Admin {
             $this->back(sprintf(__('Refresh failed: %s', 'flipick-video-generator'), $result->get_error_message()), 'error');
         }
         $this->back(sprintf(__('Reloaded %d products from WooCommerce.', 'flipick-video-generator'), (int) ($result['body']['count'] ?? 0)));
-    }
-
-    public function handle_settings() {
-        $this->guard('fvg_settings');
-        $adapter = esc_url_raw(trim((string) wp_unslash($_POST['adapter_url'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked in guard()
-        $public = esc_url_raw(trim((string) wp_unslash($_POST['public_url'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked in guard()
-        if ($adapter === '' || !filter_var($adapter, FILTER_VALIDATE_URL) || !in_array(wp_parse_url($adapter, PHP_URL_SCHEME), ['http', 'https'], true) || ($public !== '' && !in_array(wp_parse_url($public, PHP_URL_SCHEME), ['http', 'https'], true))) {
-            $this->back(__('Enter a valid adapter URL.', 'flipick-video-generator'), 'error');
-        }
-        FVG_Settings::update(['adapter_url' => $adapter, 'adapter_public_url' => $public]);
-        FVG_Logger::info('Settings saved', ['adapter' => $adapter]);
-        $this->back(__('Settings saved. Use Disconnect and Connect again if the adapter moved to a new server.', 'flipick-video-generator'));
     }
 
     /**

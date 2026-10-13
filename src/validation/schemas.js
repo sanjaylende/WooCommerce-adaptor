@@ -18,9 +18,7 @@ const videoType = z.enum(VIDEO_TYPE_KEYS);
 const versionId = z.union([z.string().regex(/^[A-Za-z0-9-]{1,64}$/), z.number().int().nonnegative()]);
 const aspectRatio = blankToUndefined(z.enum(ASPECT_RATIOS));
 const signedToken = z.string().regex(/^[A-Za-z0-9_.-]{10,4096}$/, "invalid token");
-const gateway = z.enum(["mock", "icici"]);
-const txnNo = z.string().regex(/^[A-Za-z0-9_-]{6,64}$/, "invalid reference");
-const entityId = z.string().regex(/^[A-Za-z0-9-]{1,64}$/, "invalid id");
+const gateway = z.enum(["icici"]);
 const variableMap = z.record(text(100, 1), z.union([text(2000), z.number().transform(String)])).refine((o) => Object.keys(o).length <= 60, "too many fields");
 const selectionMap = z.record(text(100, 1), text(200)).refine((o) => Object.keys(o).length <= 60, "too many fields");
 
@@ -61,7 +59,6 @@ const body = {
   // WooCommerce's webhook delivery: a product object (JSON) or the form-encoded registration ping (webhook_id=N). The signature is
   // checked by the controller over the raw bytes; here the body only has to be an object or array of reasonable shape.
   wooWebhook: z.union([z.record(z.string(), z.unknown()), z.array(z.unknown())]),
-  mockPay: z.strictObject({ result: z.enum(["paid", "failed", "pending"]) }),
 };
 
 // ---- path parameters ----
@@ -70,7 +67,6 @@ const params = {
   tagTypeVersion: z.object({ uniqueTag: tag, videoType, versionId }),
   tag: z.object({ uniqueTag: tag }),
   token: z.object({ token: signedToken }),
-  txn: z.object({ txn: txnNo }),
   gateway: z.object({ gateway }),
   installKey: z.object({ installKey: z.string().regex(/^[A-Za-z0-9_-]{4,80}$/, "invalid installation key") }),
   orderId: z.object({ id: z.string().regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/, "must be an order id (UUID)") }),

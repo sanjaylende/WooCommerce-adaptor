@@ -9,6 +9,9 @@ const DB_NAME = "woocommerce_adapter_test";
 const OWNER = "postgresql://adapter_owner:adapter_owner_local@127.0.0.1:5435";
 
 async function resetDatabase() {
+  // Payments go to a pretend ICICI bank, never to the real sandbox (see test/fakeIcici.js). Installed here, before the app is loaded,
+  // so the app's own settings (log level and so on) are not read too early.
+  if (!module.exports.icici) module.exports.icici = require("./fakeIcici").install();
   const admin = new Client({ connectionString: `${OWNER}/postgres` });
   await admin.connect();
   await admin.query(`DROP DATABASE IF EXISTS ${DB_NAME} WITH (FORCE)`);
@@ -23,7 +26,7 @@ function useTestEnvironment() {
     ADAPTER_SECRET_KEY: "11".repeat(32),
     PORT: String(ADAPTER_PORT),
     PUBLIC_BASE_URL: `http://127.0.0.1:${ADAPTER_PORT}`,
-    PAYMENT_GATEWAY: "mock",
+    ...require("./fakeIcici").ENV,
     ADMIN_BOOTSTRAP_EMAIL: "staff@test.local",
     ADMIN_BOOTSTRAP_PASSWORD: "staff-password-1",
     BILLING_GRACE_DAYS: "3",
@@ -31,7 +34,7 @@ function useTestEnvironment() {
     NODE_ENV: "test",
     // Tests must never reach a real video engine (it may be running on this machine and would spend real credits).
     FLIPICK_VIDEO_ENGINE_BASE_URL: "http://127.0.0.1:1", FLIPICK_VIDEO_ENGINE_API_KEY: "test", FLIPICK_SPONSORED_ADS_BASE_URL: "http://127.0.0.1:1",
-    FLIPICK_VVP_API_KEY: "test", FLIPICK_SPONSORED_ADS_API_KEY: "test", LOG_LEVEL: "error",
+    FLIPICK_VVP_API_KEY: "test", LOG_LEVEL: "error",
   });
 }
 

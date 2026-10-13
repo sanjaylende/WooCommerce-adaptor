@@ -78,11 +78,14 @@ final class FVG_Logger {
 
     /** Keeps the folder closed to the web: logs can hold URLs and ids. */
     private static function protect($dir) {
+        if (!is_writable($dir)) {
+            return;
+        }
         if (!is_file($dir . '/.htaccess')) {
-            @file_put_contents($dir . '/.htaccess', "# Flipick Video Generator logs: not for the web\n<IfModule mod_authz_core.c>\nRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\nOrder deny,allow\nDeny from all\n</IfModule>\n");
+            file_put_contents($dir . '/.htaccess', "# Flipick Video Generator logs: not for the web\n<IfModule mod_authz_core.c>\nRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\nOrder deny,allow\nDeny from all\n</IfModule>\n");
         }
         if (!is_file($dir . '/index.php')) {
-            @file_put_contents($dir . '/index.php', "<?php\n// Silence is golden.\n");
+            file_put_contents($dir . '/index.php', "<?php\n// Silence is golden.\n");
         }
     }
 

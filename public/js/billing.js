@@ -1,6 +1,5 @@
 // Plans & Billing UI: usage badge, plan gate, Plans & Billing modal (plans, credits, history) and the payment flow.
-// Ported from the Shopify adapter's inline billing code; payments now go through the adapter's gateway (ICICI, or the mock
-// gateway in development) in a separate browser tab, and the modal polls the order until it settles.
+// Ported from the Shopify adapter's inline billing code; payments now go through the adapter's gateway (ICICI) in a separate browser tab, and the modal polls the order until it settles.
 // Loaded before app.js; it uses app.js helpers (escapeHtml, apiUrl) only when called, after app.js has loaded.
 
 let billing = window.__BOOTSTRAP__.billing;
@@ -311,13 +310,6 @@ function historyTabHtml() {
       '<td>' + invoices + (refunds ? '<div class="muted" style="font-size:11.5px">' + refunds + '</div>' : "") + '</td></tr>';
   }).join("");
   return '<div class="history-wrap"><table class="history-table"><thead><tr><th>Date</th><th>Item</th><th class="num">Total</th><th>Status</th><th>Invoice</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
-}
-
-function planSummaryHtml() {
-  if (billing.currentPlan === "trial") return "Free plan · " + billing.freeVideosUsed + " of " + billing.freeTrialVideos + " free videos used";
-  const label = billing.plans[billing.currentPlan] ? billing.plans[billing.currentPlan].label : billing.currentPlan;
-  const state = billing.subscriptionStatus === "active" ? "active until " : billing.subscriptionStatus === "grace" ? "ended " : "ended ";
-  return label + " (" + billing.billingInterval + ") · " + state + fmtDate(billing.periodEnd) + " · " + usd(billing.cycleValueUsedCents) + " of " + usd(billing.includedValueCents) + " used";
 }
 
 function renderPlanModal() {

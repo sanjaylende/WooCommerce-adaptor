@@ -139,13 +139,13 @@ final class FVG_Log_Rotator
 
     private function ensureDir(): bool
     {
-        return is_dir($this->dir) || @mkdir($this->dir, 0775, true) || is_dir($this->dir);
+        return is_dir($this->dir) || mkdir($this->dir, 0775, true) || is_dir($this->dir);
     }
 
     /** @return mixed */
     private function withLock(callable $fn)
     {
-        $lock = @fopen($this->dir . '/.' . $this->name . '.lock', 'c');
+        $lock = is_writable($this->dir) ? fopen($this->dir . '/.' . $this->name . '.lock', 'c') : false;
         if ($lock === false) {
             return $fn(); // no lock file possible (read-only directory?): still try, the write will report the failure
         }
@@ -182,7 +182,7 @@ final class FVG_Log_Rotator
         $modified = (int) filemtime($file);
         $now = $this->now();
         $tmp = $file . '.rotating-' . gmdate('YmdHis', $now) . '-' . bin2hex(random_bytes(3));
-        if (!@rename($file, $tmp)) {
+        if (!rename($file, $tmp)) {
             error_log('[' . $this->name . '] could not rename ' . $file . ' for rotation');
             return null;
         }
@@ -205,7 +205,7 @@ final class FVG_Log_Rotator
                     if (method_exists($zip, 'setCompressionName')) {
                         $zip->setCompressionName($base . '.log', \ZipArchive::CM_DEFLATE);
                     }
-                    $ok = $zip->close() && @rename($partial, $target);
+                    $ok = $zip->close() && rename($partial, $target);
                 }
             } else {
                 // No zip extension on this PHP: gzip keeps the file small, and the problem is reported.
@@ -220,7 +220,9 @@ final class FVG_Log_Rotator
             error_log('[' . $this->name . '] could not archive ' . basename($tmp) . '; it will be retried');
             return null;
         }
-        @unlink($tmp);
+        if (is_file($tmp)) {
+            unlink($tmp);
+        }
         $this->prune($now);
         return $target;
     }
@@ -245,7 +247,7 @@ final class FVG_Log_Rotator
     private function zipLeftovers(): void
     {
         foreach ((array) glob($this->dir . '/' . $this->name . '.log.rotating-*') as $left) {
-            $this->archive($left, 'daily', (int) @filemtime($left), $this->now());
+            $this->archive($left, 'daily', (int) (is_file($left) ? filemtime($left) : $this->now()), $this->now());
         }
     }
 
@@ -256,8 +258,8 @@ final class FVG_Log_Rotator
         }
         $limit = $now - $this->retentionDays * 86400;
         foreach ((array) glob($this->dir . '/' . $this->name . '-*') as $old) {
-            if (preg_match('/\.(zip|gz)$/', $old) && (int) @filemtime($old) < $limit) {
-                @unlink($old);
+            if (preg_match('/\.(zip|gz)$/', $old) && is_file($old) && (int) filemtime($old) < $limit) {
+                unlink($old);
             }
         }
     }

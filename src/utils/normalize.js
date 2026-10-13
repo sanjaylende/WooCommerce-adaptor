@@ -31,22 +31,11 @@ function pickImages(product) {
   return images.map((i) => i && i.src).filter(Boolean);
 }
 
-function pickImage(product) {
-  return pickImages(product)[0] || null;
-}
-
 // First real category name; WooCommerce's default "Uncategorized" is treated as none.
 function pickCategory(product) {
   const cats = Array.isArray(product.categories) ? product.categories : [];
   const named = cats.find((c) => c && c.name && c.slug !== "uncategorized") || cats[0];
   return named && named.name ? decodeEntities(named.name) : DEFAULT_CATEGORY;
-}
-
-// Looks up a product meta value by key (used for the product's own video meta and anything else stored there).
-function findMeta(product, key) {
-  const meta = Array.isArray(product.meta_data) ? product.meta_data : [];
-  const found = meta.find((m) => m && m.key === key);
-  return found ? found.value : null;
 }
 
 // `variation` is the first purchasable variation of a variable product (null for any other type). Price comes from it,
@@ -122,4 +111,4 @@ async function normalizeProducts(wooProducts, resolveVariation, { currencyCode, 
   return normalized.filter((p) => p.price != null);
 }
 
-module.exports = { decodeEntities, normalizeProducts, normalizeProduct, discountPercent, findMeta, pickImage, pickImages, pickCategory };
+module.exports = { decodeEntities, normalizeProducts, normalizeProduct, discountPercent, pickImages, pickCategory };

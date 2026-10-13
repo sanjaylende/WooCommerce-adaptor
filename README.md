@@ -7,7 +7,7 @@ on the same architecture as the Magento adapter (`../magento-adaptor`); only the
 ```
 WordPress admin (plugin)  --signed HTTPS-->  this adapter  --> Flipick video engine (LTX)
         |  iframe: one-time launch token       |   PostgreSQL (EAV + billing tables)
-        '--------------------------------------'   --> payment gateway (ICICI / mock)
+        '--------------------------------------'   --> payment gateway (ICICI)
 WooCommerce  <-- REST wc/v3 (consumer key/secret) --'   --> staff console at /admin
 WooCommerce  --- signed product webhooks ---------->     (catalog cache invalidation)
 ```

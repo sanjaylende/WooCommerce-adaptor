@@ -13,17 +13,13 @@ final class FVG_Connection {
     const WEBHOOK_TOPICS = ['product.created' => 'product created', 'product.updated' => 'product updated', 'product.deleted' => 'product deleted'];
 
     /** @return true|WP_Error */
-    public static function connect($adapter_url, $public_url) {
+    public static function connect() {
         try {
-            $adapter_url = esc_url_raw(trim((string) $adapter_url));
-            if ($adapter_url === '' || !filter_var($adapter_url, FILTER_VALIDATE_URL) || !in_array(wp_parse_url($adapter_url, PHP_URL_SCHEME), ['http', 'https'], true)) {
-                return new WP_Error('fvg_bad_url', __('Enter a valid adapter URL, for example https://video.example.com', 'flipick-video-generator'));
+            $adapter_url = FVG_Settings::adapter_url();
+            if (!FVG_Endpoints::is_valid($adapter_url) || !FVG_Endpoints::is_valid(FVG_Settings::adapter_public_url())) {
+                FVG_Logger::error('The adapter address is not a valid http(s) address', ['adapter' => $adapter_url]);
+                return new WP_Error('fvg_bad_url', __('The Flipick service address is missing or invalid in this plugin. Please contact Flipick support.', 'flipick-video-generator'));
             }
-            $public_url = esc_url_raw(trim((string) $public_url));
-            if ($public_url !== '' && !in_array(wp_parse_url($public_url, PHP_URL_SCHEME), ['http', 'https'], true)) {
-                $public_url = '';
-            }
-            FVG_Settings::update(['adapter_url' => $adapter_url, 'adapter_public_url' => $public_url]);
             FVG_Logger::info('Connecting to adapter', ['adapter' => $adapter_url]);
 
             $key = self::create_rest_key();
@@ -70,7 +66,7 @@ final class FVG_Connection {
         if ($code === 'fvg_unreachable') {
             $hint = __('Check that the adapter is running and that this server can reach the address. In Docker, use host.docker.internal instead of localhost.', 'flipick-video-generator');
         } elseif ($code === 'fvg_adapter_404' || $code === 'fvg_adapter_405') {
-            $hint = __('That address answered, but it is not the Flipick adapter. Check the Adapter URL (no extra path, correct port).', 'flipick-video-generator');
+            $hint = __('That address answered, but it is not the Flipick adapter. Check the adapter address (no extra path, correct port).', 'flipick-video-generator');
         } elseif (strpos((string) $code, 'fvg_adapter_5') === 0) {
             $hint = __('The adapter reported an internal error. Try again, and check its logs.', 'flipick-video-generator');
         }

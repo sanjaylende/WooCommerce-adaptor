@@ -25,6 +25,7 @@ define('FVG_META_VIDEO_THUMB', '_flipick_video_thumb');
 
 require_once FVG_DIR . 'includes/class-fvg-log-rotator.php';
 require_once FVG_DIR . 'includes/class-fvg-logger.php';
+require_once FVG_DIR . 'includes/class-fvg-endpoints.php';
 require_once FVG_DIR . 'includes/class-fvg-settings.php';
 require_once FVG_DIR . 'includes/class-fvg-adapter-client.php';
 require_once FVG_DIR . 'includes/class-fvg-connection.php';
@@ -62,7 +63,7 @@ add_action('plugins_loaded', function () {
 // On a 'local' environment the configured adapter host is allowed; production sites are unaffected.
 add_filter('http_request_host_is_external', function ($external, $host) {
     if (!$external && function_exists('wp_get_environment_type') && wp_get_environment_type() === 'local') {
-        $adapter = wp_parse_url((string) FVG_Settings::get('adapter_url'), PHP_URL_HOST);
+        $adapter = wp_parse_url((string) FVG_Settings::adapter_url(), PHP_URL_HOST);
         return $adapter && strtolower($adapter) === strtolower($host) ? true : $external;
     }
     return $external;
@@ -71,7 +72,7 @@ add_filter('http_request_host_is_external', function ($external, $host) {
 // WordPress's "safe" requests only allow ports 80, 443 and 8080; a local adapter listens elsewhere (4300).
 add_filter('http_allowed_safe_ports', function ($ports, $host) {
     if (function_exists('wp_get_environment_type') && wp_get_environment_type() === 'local') {
-        $adapter = wp_parse_url((string) FVG_Settings::get('adapter_url'));
+        $adapter = wp_parse_url((string) FVG_Settings::adapter_url());
         if (!empty($adapter['host']) && strtolower($adapter['host']) === strtolower($host) && !empty($adapter['port'])) {
             $ports[] = (int) $adapter['port'];
         }

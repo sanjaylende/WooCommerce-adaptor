@@ -9,11 +9,14 @@ x-wp-config-extra: &wp-config-extra |
       define('WP_DEBUG_LOG', true);
       define('WP_DEBUG_DISPLAY', false);
       define('WP_ENVIRONMENT_TYPE', 'local');
-      define('FLIPICK_ADAPTER_URL', '${FLIPICK_ADAPTER_URL}');
+      // Browser address of the adapter (the frame). The server address is separate: how this container reaches it.
+      define('FLIPICK_ADAPTER_URL', '${FLIPICK_ADAPTER_PUBLIC_URL}');
+      define('FLIPICK_ADAPTER_SERVER_URL', '${FLIPICK_ADAPTER_URL}');
 
 services:
   db:
     image: mariadb:11.4
+    ports: ["127.0.0.1:3309:3306"]
     restart: unless-stopped
     environment:
       MARIADB_DATABASE: ${WP_DB_NAME}

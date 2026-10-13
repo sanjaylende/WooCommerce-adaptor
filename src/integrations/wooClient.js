@@ -184,10 +184,6 @@ async function fetchVariations(baseUrl, credentials, productId, options = {}) {
   return fetchAllPages(baseUrl, credentials, `/products/${encodeURIComponent(productId)}/variations`, { status: "publish" }, options);
 }
 
-async function fetchProductById(baseUrl, credentials, productId, options = {}) {
-  return wooRequest(apiUrl(baseUrl, `/products/${encodeURIComponent(productId)}`), credentials, options);
-}
-
 // Writes product meta_data. WooCommerce merges by key and leaves every other field untouched.
 async function updateProductMeta(baseUrl, credentials, productId, meta, options = {}) {
   const meta_data = Object.entries(meta).map(([key, value]) => ({ key, value: value ?? "" }));
@@ -219,5 +215,5 @@ async function fetchStoreInfo(baseUrl, credentials, options = {}) {
 
 module.exports = {
   WooApiError, wooRequest, wooRequestRaw, apiUrl, parseCredentials, resolveAuthMode, signOAuth,
-  fetchAllProducts, fetchVariations, fetchProductById, updateProductMeta, batchUpdateProducts, fetchStoreInfo,
+  fetchAllProducts, fetchVariations, updateProductMeta, batchUpdateProducts, fetchStoreInfo,
 };

@@ -12,7 +12,7 @@ Generate product videos with Flipick and show them on your WooCommerce product p
 
 Connect your store to the Flipick video adapter, choose a product, generate a video, and publish it to the product page.
 
-* Connect / Disconnect / Re-sync from WooCommerce > Video Generator.
+* Connect / Disconnect / Re-sync from WooCommerce > Flipick Video Generator.
 * Creates one WooCommerce REST API key (Read/Write) for the adapter; Disconnect removes it.
 * Registers signed webhooks (product created / updated / deleted) so the adapter's catalog stays fresh.
 * Shows the published video after the product summary, or anywhere with [flipick_video id="123"].
@@ -22,7 +22,7 @@ Connect your store to the Flipick video adapter, choose a product, generate a vi
 == Installation ==
 
 1. Copy the `flipick-video-generator` folder to `wp-content/plugins/` and activate it (WooCommerce must be active).
-2. WooCommerce > Video Generator: enter the adapter URL and press Connect store.
+2. WooCommerce > Flipick Video Generator: press Connect to Flipick.
 
 == Data sent to the adapter ==
 
@@ -31,7 +31,7 @@ Product data is read by the adapter through the WooCommerce REST API; nothing is
 
 == Logs ==
 
-wp-content/uploads/flipick-video-generator-logs/ (closed to the web; listed and downloadable under WooCommerce > Video Generator > Logs). Rotated every day at 00:05 (site timezone) and whenever a file passes 10 MB: the old file is zipped and a new one started. Secrets are never logged.
+wp-content/uploads/flipick-video-generator-logs/ (closed to the web; listed and downloadable under WooCommerce > Flipick Video Generator > Logs). Rotated every day at 00:05 (site timezone) and whenever a file passes 10 MB: the old file is zipped and a new one started. Secrets are never logged.
 
 == Changelog ==
 

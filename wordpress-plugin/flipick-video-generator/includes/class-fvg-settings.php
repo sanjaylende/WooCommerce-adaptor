@@ -11,10 +11,6 @@ final class FVG_Settings {
     public static function all() {
         $stored = get_option(self::OPTION, []);
         $defaults = [
-            // How the SERVER reaches the adapter (from inside Docker, host.docker.internal).
-            'adapter_url' => defined('FLIPICK_ADAPTER_URL') ? FLIPICK_ADAPTER_URL : '',
-            // How the BROWSER reaches it (for the iframe). Empty = same as adapter_url.
-            'adapter_public_url' => '',
             'install_key' => '',
             'secret_enc' => '',
             'connected_at' => 0,
@@ -37,13 +33,14 @@ final class FVG_Settings {
         self::update(['install_key' => '', 'secret_enc' => '', 'connected_at' => 0, 'api_key_id' => 0, 'webhook_ids' => []]);
     }
 
+    /** How the SERVER reaches the adapter (see FVG_Endpoints). */
     public static function adapter_url() {
-        return untrailingslashit((string) self::get('adapter_url'));
+        return FVG_Endpoints::server_url();
     }
 
+    /** How the BROWSER reaches the adapter, for the frame (see FVG_Endpoints). */
     public static function adapter_public_url() {
-        $public = (string) self::get('adapter_public_url');
-        return untrailingslashit($public !== '' ? $public : (string) self::get('adapter_url'));
+        return FVG_Endpoints::browser_url();
     }
 
     public static function is_connected() {
