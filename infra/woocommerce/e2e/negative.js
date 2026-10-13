@@ -4,7 +4,7 @@ const jar = new Map();
 async function http(url, o = {}) { const c = [...jar].map(([k, v]) => `${k}=${v}`).join("; "); const r = await fetch(url, { redirect: "manual", ...o, headers: { ...(o.headers || {}), ...(c ? { Cookie: c } : {}) } }); for (const s of r.headers.getSetCookie?.() || []) { const [kv] = s.split(";"); const i = kv.indexOf("="); jar.set(kv.slice(0, i), kv.slice(i + 1)); } return r; }
 const post = (u, o) => http(u, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(o).toString() });
 const nonce = (h, a) => { const m = h.replace(/\s+/g, " ").match(new RegExp(`value="${a}"[^>]*>[^>]*?_wpnonce" value="([a-z0-9]+)"`)); return m && m[1]; };
-const msg = (r) => decodeURIComponent(((r.headers.get("location") || "").match(/fvg_msg=([^&]*)/) || [, ""])[1].replace(/\+/g, " "));
+const msg = (r) => decodeURIComponent(((r.headers.get("location") || "").match(/fvg_msg=([^&]*)/) || ["", ""])[1].replace(/\+/g, " "));
 let bad = 0; const check = (n, ok, d = "") => { console.log(`${ok ? "PASS" : "FAIL"}  ${n}${d ? "  -- " + d : ""}`); if (!ok) bad++; };
 (async () => {
   jar.set("wordpress_test_cookie", "WP%20Cookie%20check");

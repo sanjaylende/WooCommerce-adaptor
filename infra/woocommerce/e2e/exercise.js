@@ -23,7 +23,7 @@ async function http(url, opts = {}) {
 const form = (o) => new URLSearchParams(o).toString();
 const post = (url, o) => http(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: form(o) });
 const nonceFor = (html, action) => { const m = html.replace(/\s+/g, " ").match(new RegExp(`value="${action}"[^>]*>[^>]*?_wpnonce" value="([a-z0-9]+)"`)); return m && m[1]; };
-const msgOf = (res) => { const l = res.headers.get("location") || ""; return decodeURIComponent((l.match(/fvg_msg=([^&]*)/) || [, ""])[1].replace(/\+/g, " ")); };
+const msgOf = (res) => { const l = res.headers.get("location") || ""; return decodeURIComponent((l.match(/fvg_msg=([^&]*)/) || ["", ""])[1].replace(/\+/g, " ")); };
 
 (async () => {
   // 1. log in
