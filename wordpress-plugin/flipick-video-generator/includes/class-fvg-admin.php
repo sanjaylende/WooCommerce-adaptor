@@ -213,7 +213,7 @@ final class FVG_Admin {
         }
         $states = [];
         try {
-            $result = FVG_Adapter_Client::signed('GET', '/api/products');
+            $result = FVG_Adapter_Client::signed('GET', '/api/products', null, FVG_Adapter_Client::PAGE_TIMEOUT);
             if (!is_wp_error($result)) {
                 foreach ((array) ($result['body']['products'] ?? []) as $row) {
                     if (!empty($row['productId'])) {
@@ -224,7 +224,8 @@ final class FVG_Admin {
         } catch (Throwable $e) {
             FVG_Logger::warning('Could not read video states', ['error' => $e->getMessage()]);
         }
-        set_transient(self::STATUS_TRANSIENT, $states, is_wp_error($result ?? null) || !$states ? 30 : 60);
+        // A failure is remembered for a minute (an adapter that is down or hanging is asked once a minute, not on every page); an empty answer for 30 s.
+        set_transient(self::STATUS_TRANSIENT, $states, is_wp_error($result ?? null) ? 60 : (!$states ? 30 : 60));
         return $states;
     }
 

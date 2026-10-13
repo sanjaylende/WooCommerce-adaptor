@@ -9,14 +9,16 @@ defined('ABSPATH') || exit;
  */
 final class FVG_Adapter_Client {
     const TIMEOUT = 20;
+    /** Calls made while a wp-admin page is being built give up much sooner: an adapter that does not answer must not hold the page up. */
+    const PAGE_TIMEOUT = 3;
 
     /** Unsigned: used only for the one-time registration. */
     public static function register(array $payload) {
         return self::send('POST', '/api/v1/register', $payload, false);
     }
 
-    public static function signed($method, $path, $payload = null) {
-        return self::send($method, $path, $payload, true);
+    public static function signed($method, $path, $payload = null, $timeout = self::TIMEOUT) {
+        return self::send($method, $path, $payload, true, $timeout);
     }
 
     /** A short-lived, single-use token that lets the browser open the adapter UI without ever seeing the secret. */
@@ -26,7 +28,7 @@ final class FVG_Adapter_Client {
         return $body . '.' . hash_hmac('sha256', $body, FVG_Settings::secret());
     }
 
-    private static function send($method, $path, $payload, $sign) {
+    private static function send($method, $path, $payload, $sign, $timeout = self::TIMEOUT) {
         try {
             $base = FVG_Settings::adapter_url();
             if ($base === '') {
@@ -52,7 +54,7 @@ final class FVG_Adapter_Client {
             $started = microtime(true);
             $response = wp_remote_request($base . $path, [
                 'method' => strtoupper($method), 'headers' => $headers, 'body' => $raw === '' ? null : $raw,
-                'timeout' => self::TIMEOUT, 'redirection' => 0,
+                'timeout' => $timeout, 'redirection' => 0,
             ]);
             $ms = (int) ((microtime(true) - $started) * 1000);
             if (is_wp_error($response)) {
