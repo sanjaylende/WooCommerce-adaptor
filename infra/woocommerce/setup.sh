@@ -3,15 +3,17 @@
 # Safe to run again; it only does what is missing. Run from this folder:  ./setup.sh
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
+# A second store next to the first: ENV_FILE=.env2 ./setup.sh  (its own project, ports, database and REST keys file)
+ENVF="${ENV_FILE:-.env}"
 export MSYS_NO_PATHCONV=1   # Git Bash on Windows must not rewrite /seed and /var/www paths
 
-if [ ! -f .env ]; then
-  echo "No .env found. Copy .env.example to .env first (cp .env.example .env) and review it." >&2
+if [ ! -f "$ENVF" ]; then
+  echo "No $ENVF found. Copy .env.example to $ENVF first and review it." >&2
   exit 1
 fi
-set -a; . ./.env; set +a
+set -a; . "./$ENVF"; set +a
 
-DC="docker compose --env-file .env"
+DC="docker compose --env-file $ENVF"
 wp() { $DC run --rm -T wpcli wp "$@"; }
 
 log() { printf '\n==> %s\n' "$*"; }
@@ -82,8 +84,8 @@ log "Seeding demo data"
 wp eval-file /seed/seed.php
 
 log "REST API keys (read/write)"
-if [ -f .env.local ] && grep -q '^WC_CONSUMER_KEY=ck_' .env.local; then
-  echo "Keys already present in .env.local"
+if [ -f "$ENVF.local" ] && grep -q '^WC_CONSUMER_KEY=ck_' "$ENVF.local"; then
+  echo "Keys already present in $ENVF.local"
 else
   KEYS=$(wp eval '
     global $wpdb;
@@ -100,8 +102,8 @@ else
     echo "WC_SITE_URL=${WP_SITE_URL}"
     echo "WC_CONSUMER_KEY=${KEYS%%:*}"
     echo "WC_CONSUMER_SECRET=${KEYS##*:}"
-  } > .env.local
-  echo "Wrote .env.local"
+  } > "$ENVF.local"
+  echo "Wrote $ENVF.local"
 fi
 
 log "Webhooks (product + order events) pointing at the adapter"
@@ -126,5 +128,5 @@ wp eval '
 
 log "Done"
 echo "Store:   ${WP_SITE_URL}   admin: ${WP_ADMIN_USER} / (see .env)"
-echo "API:     ${WP_SITE_URL}/wp-json/wc/v3/products  (keys in .env.local)"
+echo "API:     ${WP_SITE_URL}/wp-json/wc/v3/products  (keys in $ENVF.local)"
 echo "Verify:  node verify.js"

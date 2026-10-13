@@ -1,6 +1,6 @@
 # Local WooCommerce for development and tests. Images are pinned so everyone gets the same stack.
 #   docker compose --env-file .env up -d      (see README.md)
-name: woocommerce-local
+name: ${COMPOSE_PROJECT_NAME:-woocommerce-local}
 
 # wp-config.php evaluates this at runtime, so WP-CLI must see the same value as the web container.
 x-wp-config-extra: &wp-config-extra |
@@ -16,7 +16,7 @@ x-wp-config-extra: &wp-config-extra |
 services:
   db:
     image: mariadb:11.4
-    ports: ["127.0.0.1:3309:3306"]
+    ports: ["127.0.0.1:${DB_HOST_PORT:-3309}:3306"]
     restart: unless-stopped
     environment:
       MARIADB_DATABASE: ${WP_DB_NAME}

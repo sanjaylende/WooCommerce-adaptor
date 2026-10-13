@@ -159,3 +159,6 @@ backups/
 test-journeys/*.png
 test-journeys/*.zip
 test-journeys/*results*.json
+
+infra/woocommerce/.env2
+infra/woocommerce/.env2.local

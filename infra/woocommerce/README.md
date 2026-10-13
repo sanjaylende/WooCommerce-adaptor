@@ -63,3 +63,6 @@ rm .env.local                                # then ./setup.sh creates fresh key
 | `docker compose` warns about unset variables | Always pass `--env-file .env` from this folder |
 
 Never reuse these passwords or keys anywhere real. `.env` and `.env.local` are git-ignored.
+
+## A second store next to the first
+To test two stores against one adapter (like the two Magento instances), copy `.env` to `.env2` and change `WP_PORT` (8086), `PMA_PORT`, `WP_SITE_URL`, `WP_SITE_TITLE`, and add `COMPOSE_PROJECT_NAME=woocommerce-local2` and `DB_HOST_PORT=3310`. Then run `ENV_FILE=.env2 ./setup.sh`. The second store has its own containers, volumes, database and REST keys (`.env2.local`); the plugin folder is shared. Connect it from its own *WooCommerce > Flipick Video Generator* page. `.env2` and `.env2.local` are git-ignored. WordPress names its login cookie from a hash of the site address (including the port), so logging in to both stores in one browser works.
