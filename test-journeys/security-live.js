@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const h = require('../test/helpers');
 const { sql, reporter } = require('./common');
 const { results, ok } = reporter();
-const BASE = 'http://localhost:4300';
+const BASE = String(process.argv[2] || 'http://localhost:4300').replace(/\/+$/, '');
 const FAKE = `http://127.0.0.1:${h.WOO_PORT}`;
 const RUN = crypto.randomBytes(3).toString('hex');
 const scrypt = (pw) => { const salt = crypto.randomBytes(16).toString('hex'); return `scrypt:${salt}:${crypto.scryptSync(pw, salt, 64).toString('hex')}`; };

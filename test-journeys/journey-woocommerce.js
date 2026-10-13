@@ -1,17 +1,21 @@
 // Full user journey on the local WooCommerce store (http://localhost:8085) against the HARDENED adapter in development mode
-// with the mock payment gateway and the mock video engine. Mirrors the Magento journey. Every adapter response >= 400 is logged.
+// with the pretend ICICI bank (control address on QA_PORT+80, see QA-parity-run/qa-start.js) and the mock video engine. Mirrors the Magento journey. Every adapter response >= 400 is logged.
 const { WP, DIR, E, sql, maria, reporter, launch, login, fs, path, execFileSync } = require('./common');
 const { results, ok } = reporter();
-const shot = (page, n) => page.screenshot({ path: path.join(DIR, n) });
+const shot = (page, n) => page.screenshot({ path: path.join(process.env.QA_SHOTS || DIR, n) });
 const wpcli = (...args) => execFileSync('docker', ['compose', '-p', 'woocommerce-local', '-f', path.join(DIR, '..', 'infra', 'woocommerce', 'docker-compose.yml'), '--env-file', path.join(DIR, '..', 'infra', 'woocommerce', '.env'), 'run', '--rm', '-T', 'wpcli', 'wp', ...args], { encoding: 'utf8', env: E, stdio: ['ignore', 'pipe', 'ignore'] }).trim();
 let stage = 'start';
+const QA_PORT = process.env.QA_PORT || '4300';
+const SHOTS = process.env.QA_SHOTS || DIR;
 
 (async () => {
   const { b, ctx, page } = await launch();
   const refused = [], pageErrors = [], cspViolations = [], wpNotices = [];
   page.on('pageerror', (e) => pageErrors.push(e.message.slice(0, 160)));
   page.on('console', (m) => { if (/Content Security Policy|Refused to/i.test(m.text())) cspViolations.push(m.text().slice(0, 200)); });
-  ctx.on('response', (r) => { if (r.status() >= 400 && /localhost:4300/.test(r.url()) && !/favicon/.test(r.url())) refused.push(`${r.status()} ${r.request().method()} ${new URL(r.url()).pathname}`); });
+  ctx.on('response', (r) => { if (r.status() >= 400 && new RegExp('localhost:' + QA_PORT + '|127\\.0\\.0\\.1:' + QA_PORT).test(r.url()) && !/favicon/.test(r.url())) refused.push(`${r.status()} ${r.request().method()} ${new URL(r.url()).pathname}`); });
+
+  await ctx.route(/icici/, (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<h1>bank stub</h1>' }));
 
   // start from "not connected yet": drop the plugin's stored connection settings so the Connect form is shown, as on a fresh install
   wpcli('option', 'delete', 'fvg_settings');
@@ -23,9 +27,8 @@ let stage = 'start';
   stage = 'connect';
   const instBefore = sql("select count(*) from installations where status='active'");
   await page.goto(`${WP}/wp-admin/admin.php?page=flipick-video-generator`, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('#fvg_adapter_url', { timeout: 30000 });
-  await page.fill('#fvg_adapter_url', 'http://host.docker.internal:4300');
-  await page.fill('#fvg_public_url', 'http://localhost:4300');
+  await page.waitForSelector('#submit', { timeout: 30000 });
+  ok('1b. the Connect page has no address fields (addresses are constants in the plugin)', (await page.locator('#fvg_adapter_url, #fvg_public_url').count()) === 0);
   await shot(page, 'wj-0-connect.png');
   await page.click('#submit');
   await page.waitForLoadState('domcontentloaded');
@@ -86,8 +89,8 @@ let stage = 'start';
   ok('8. Download through the signed link returns MP4 bytes', size > 1000 && head === 'ftyp', `${size} bytes, box ${head}`);
 
   stage = 'billing';
-  await page.goto(`${WP}/wp-admin/admin.php?page=flipick-video-generator-billing`, { waitUntil: 'domcontentloaded' });
-  const f2 = await (await page.waitForSelector('iframe[title="Plans & Billing"]', { timeout: 30000 })).contentFrame();
+  await page.goto(`${WP}/wp-admin/admin.php?page=flipick-video-generator`, { waitUntil: 'domcontentloaded' });
+  const f2 = await (await page.waitForSelector('iframe[title="Flipick Video Generator"]', { timeout: 30000 })).contentFrame();
   await f2.waitForFunction(() => document.querySelector('#usageBadge')?.innerText.trim().length > 0 && typeof openPlanModal === 'function', null, { timeout: 150000 });
   await f2.locator('#planCta').click();
   await f2.waitForSelector('.plan-modal');
@@ -99,13 +102,13 @@ let stage = 'start';
   console.log('   plan button to click:', (await candidate.innerText()).trim());
   await candidate.click();
   const pay = await popupP;
-  await pay.waitForSelector('#pay-success', { timeout: 30000 });
-  ok('10. Mock gateway page opens (new tab) for the chosen plan', /Mock payment gateway/.test(await pay.innerText('body')));
-  const ordersBefore = Number(sql("select count(*) from payment_orders where status='paid'"));
-  await pay.click('#pay-success');
-  await pay.waitForFunction(() => /Payment received/.test(document.body.innerText), null, { timeout: 30000 });
-  ok('11. Payment return page says "Payment received"', true);
+  await pay.waitForURL(/icici/, { timeout: 60000 }).catch(() => {});
+  ok('10. The payment tab opens on the ICICI sandbox address for the chosen plan', /icici/.test(new URL(pay.url()).host), new URL(pay.url()).host);
   await pay.close();
+  const ordersBefore = Number(sql("select count(*) from payment_orders where status='paid'"));
+  const txn = sql("select merchant_txn_no from payment_orders order by created_at desc limit 1");
+  const paidPage = await (await fetch('http://127.0.0.1:' + (Number(QA_PORT) + 80) + '/pay?txn=' + encodeURIComponent(txn) + '&result=paid')).text();
+  ok('11. Payment return page says "Payment received"', /Payment received/.test(paidPage));
   await page.waitForTimeout(2000);
   ok('12. Order status paid in DB', Number(sql("select count(*) from payment_orders where status='paid'")) === ordersBefore + 1, sql('select o.status, o.total_minor from payment_orders o order by created_at desc limit 1'));
   await f2.locator('.plan-footer .btn-text', { hasText: 'Payments' }).click().catch(() => {});
@@ -117,7 +120,7 @@ let stage = 'start';
   ok('14. no adapter response >= 400 during the journey', refused.length === 0, refused.slice(0, 8).join(' | '));
   ok('15. no JavaScript errors / CSP violations in wp-admin or the adapter UI', pageErrors.length === 0 && cspViolations.length === 0, [...pageErrors, ...cspViolations].slice(0, 3).join(' | '));
   ok('16. no WordPress error/warning notices on the plugin pages', wpNotices.length === 0, wpNotices.join(' | '));
-  fs.writeFileSync(path.join(DIR, 'journey-woocommerce-results.json'), JSON.stringify({ results, refused, pageErrors, cspViolations, wpNotices }, null, 2));
+  fs.writeFileSync(path.join(SHOTS, 'journey-woocommerce-results.json'), JSON.stringify({ results, refused, pageErrors, cspViolations, wpNotices }, null, 2));
   await b.close();
   const failed = results.filter((r) => !r.pass).length;
   console.log(`\n${results.length - failed}/${results.length} steps passed`);

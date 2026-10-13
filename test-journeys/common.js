@@ -14,7 +14,7 @@ function wpCreds() {
   const get = (k) => (txt.match(new RegExp('^' + k + '=(.*)$', 'm')) || [])[1];
   return { user: (get('WP_ADMIN_USER') || 'admin').trim(), pass: (get('WP_ADMIN_PASSWORD') || '').trim() };
 }
-const sql = (q) => execFileSync('docker', ['exec', '-i', 'woocommerce-adaptor-db-1', 'psql', '-U', 'adapter_owner', '-d', 'woocommerce_adapter', '-At'], { input: q, encoding: 'utf8', env: E }).trim();
+const sql = (q) => execFileSync('docker', ['exec', '-i', 'woocommerce-adaptor-db-1', 'psql', '-U', 'adapter_owner', '-d', process.env.QA_DB || 'woocommerce_adapter', '-At'], { input: q, encoding: 'utf8', env: E }).trim();
 const maria = (q) => execFileSync('docker', ['exec', '-i', 'woocommerce-local-db-1', 'sh', '-c', 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" "$MARIADB_DATABASE" -N'], { input: q, encoding: 'utf8', env: E }).trim();
 
 function reporter() {
