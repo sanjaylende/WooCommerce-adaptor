@@ -110,7 +110,7 @@ describe("security hardening", () => {
       const api = await h.api("GET", "/api/bootstrap");
       assert.equal(api.headers.get("set-cookie"), null);
       const login = await fetch(`${BASE()}/admin/login`, { method: "POST", redirect: "manual", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "email=staff@test.local&password=staff-password-1" });
-      const cookie = login.headers.getSetCookie().find((c) => c.startsWith("fl_admin="));
+      const cookie = login.headers.getSetCookie().find((c) => c.startsWith("fl_admin_woo="));
       assert.match(cookie, /HttpOnly/i);
       assert.match(cookie, /SameSite=Strict/i);
       assert.match(cookie, /Path=\/admin/);
@@ -123,7 +123,7 @@ describe("security hardening", () => {
       config.isProduction = true;
       try {
         const login = await fetch(`${BASE()}/admin/login`, { method: "POST", redirect: "manual", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "email=staff@test.local&password=staff-password-1" });
-        assert.match(login.headers.getSetCookie().find((c) => c.startsWith("fl_admin=")), /; Secure/);
+        assert.match(login.headers.getSetCookie().find((c) => c.startsWith("fl_admin_woo=")), /; Secure/);
         const res = await fetch(BASE() + "/admin/login");
         assert.equal(res.headers.get("strict-transport-security"), "max-age=31536000; includeSubDomains");
       } finally { config.isProduction = false; }
@@ -284,7 +284,7 @@ describe("security hardening", () => {
       await post("/admin/login", { email: "lock@test.local", password: "nope" }); // third failure: locked
       const lockedRight = await post("/admin/login", { email: "lock@test.local", password: "right-password-1" });
       assert.equal(lockedRight.status, 401, "correct password refused while locked");
-      assert.equal(cookieOf(lockedRight, "fl_admin"), "");
+      assert.equal(cookieOf(lockedRight, "fl_admin_woo"), "");
       assert.equal(await lockedRight.text(), wrongText, "same page: nothing reveals the lock");
       const row = (await db.asSystem(() => db.query("SELECT failed_attempts, locked_until FROM admin_users WHERE email = 'lock@test.local'"))).rows[0];
       assert.ok(row.failed_attempts >= 3 && new Date(row.locked_until) > new Date());
@@ -292,7 +292,7 @@ describe("security hardening", () => {
       await db.asSystem(() => db.query("UPDATE admin_users SET locked_until = now() - interval '1 minute' WHERE email = 'lock@test.local'"));
       const ok = await post("/admin/login", { email: "lock@test.local", password: "right-password-1" });
       assert.equal(ok.status, 302);
-      assert.match(cookieOf(ok, "fl_admin"), /^fl_admin=.+/);
+      assert.match(cookieOf(ok, "fl_admin_woo"), /^fl_admin_woo=.+/);
     });
 
     it("an unknown e-mail gets the same answer as a wrong password", async () => {
@@ -306,7 +306,7 @@ describe("security hardening", () => {
     it("the session cookie is HttpOnly, SameSite=Strict and limited to /admin", async () => {
       await addStaff("cookie@test.local", "right-password-3");
       const ok = await post("/admin/login", { email: "cookie@test.local", password: "right-password-3" });
-      const raw = ok.headers.getSetCookie().find((c) => c.startsWith("fl_admin="));
+      const raw = ok.headers.getSetCookie().find((c) => c.startsWith("fl_admin_woo="));
       assert.match(raw, /HttpOnly/);
       assert.match(raw, /SameSite=Strict/);
       assert.match(raw, /Path=\/admin/);
@@ -323,8 +323,8 @@ describe("security hardening", () => {
 
       const step1 = await post("/admin/login", { email: "tfa@test.local", password: "right-password-4" });
       assert.equal(step1.status, 200);
-      assert.equal(cookieOf(step1, "fl_admin"), "", "no session after the password step");
-      const pending = cookieOf(step1, "fl_admin_2fa");
+      assert.equal(cookieOf(step1, "fl_admin_woo"), "", "no session after the password step");
+      const pending = cookieOf(step1, "fl_admin_woo_2fa");
       assert.ok(pending);
       assert.equal((await post("/admin/login/2fa", { code: "123456" }, pending)).status, 401);
       // the code used to enrol was already accepted once, so it cannot be used again
@@ -333,7 +333,7 @@ describe("security hardening", () => {
       const next = authenticator.clone({ epoch: Date.now() + 30000 }).generate(secret);
       const ok = await post("/admin/login/2fa", { code: next }, pending);
       assert.equal(ok.status, 302);
-      assert.match(cookieOf(ok, "fl_admin"), /^fl_admin=.+/);
+      assert.match(cookieOf(ok, "fl_admin_woo"), /^fl_admin_woo=.+/);
       assert.equal((await post("/admin/login/2fa", { code: next }, pending)).status, 401, "replaying the accepted code fails");
     });
 
@@ -343,7 +343,7 @@ describe("security hardening", () => {
       const { secret } = await users.beginEnrollment(id, "tfalock@test.local");
       await users.confirmEnrollment(id, authenticator.generate(secret));
       const step1 = await post("/admin/login", { email: "tfalock@test.local", password: "right-password-5" });
-      const pending = cookieOf(step1, "fl_admin_2fa");
+      const pending = cookieOf(step1, "fl_admin_woo_2fa");
       for (let i = 0; i < 3; i++) await post("/admin/login/2fa", { code: "111111" }, pending);
       const row = (await db.asSystem(() => db.query("SELECT locked_until FROM admin_users WHERE id = $1", [id]))).rows[0];
       assert.ok(row.locked_until && new Date(row.locked_until) > new Date(), "locked after three wrong codes");
@@ -354,7 +354,7 @@ describe("security hardening", () => {
       await addStaff("must@test.local", "right-password-6");
       const login = await post("/admin/login", { email: "must@test.local", password: "right-password-6" });
       assert.equal(login.headers.get("location"), "/admin/security");
-      const cookie = cookieOf(login, "fl_admin");
+      const cookie = cookieOf(login, "fl_admin_woo");
       const overview = await fetch(`${BASE()}/admin`, { headers: { Cookie: cookie }, redirect: "manual" });
       assert.equal(overview.status, 302);
       assert.equal(overview.headers.get("location"), "/admin/security");
@@ -368,19 +368,19 @@ describe("security hardening", () => {
       await addStaff("idle@test.local", "right-password-7");
       const uid = await idOf("idle@test.local");
       const now = Math.floor(Date.now() / 1000);
-      const make = (last) => `fl_admin=${crypto.signToken({ typ: "admin", uid, iat: now - 60, last }, 3600)}`;
+      const make = (last) => `fl_admin_woo=${crypto.signToken({ typ: "admin", uid, iat: now - 60, last }, 3600)}`;
       const stale = await fetch(`${BASE()}/admin`, { headers: { Cookie: make(now - 31 * 60) }, redirect: "manual" });
       assert.equal(stale.status, 302);
       assert.match(stale.headers.get("location"), /^\/admin\/login/);
       const fresh = await fetch(`${BASE()}/admin`, { headers: { Cookie: make(now - 60) }, redirect: "manual" });
       assert.equal(fresh.status, 200);
-      assert.match(cookieOf(fresh, "fl_admin"), /^fl_admin=.+/, "cookie re-issued with a new activity time");
+      assert.match(cookieOf(fresh, "fl_admin_woo"), /^fl_admin_woo=.+/, "cookie re-issued with a new activity time");
     });
 
     it("a state-changing form without a valid CSRF token is refused", async () => {
       await addStaff("csrf@test.local", "right-password-8");
       const login = await post("/admin/login", { email: "csrf@test.local", password: "right-password-8" });
-      const cookie = cookieOf(login, "fl_admin");
+      const cookie = cookieOf(login, "fl_admin_woo");
       assert.equal((await post("/admin/installations/1/status", { status: "suspended" }, cookie)).status, 403);
       assert.equal((await post("/admin/installations/1/status", { status: "suspended", _csrf: "deadbeef" }, cookie)).status, 403);
     });

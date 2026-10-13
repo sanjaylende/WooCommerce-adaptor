@@ -16,8 +16,10 @@ const S = require("../validation/schemas");
 const v = require("./views");
 
 const router = express.Router();
-const COOKIE = "fl_admin";
-const PENDING_COOKIE = "fl_admin_2fa"; // password accepted, second factor still to be entered (5 minutes)
+// The cookie names differ from the Magento adapter's (fl_admin): browsers keep one cookie per host name and path and ignore the port, so two
+// adapters on localhost with the same cookie name would log each other out.
+const COOKIE = "fl_admin_woo";
+const PENDING_COOKIE = "fl_admin_woo_2fa"; // password accepted, second factor still to be entered (5 minutes)
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 const q = (sql, params) => asSystem(() => query(sql, params));
 

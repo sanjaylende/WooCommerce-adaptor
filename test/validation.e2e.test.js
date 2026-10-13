@@ -29,7 +29,7 @@ describe("input validation", () => {
     A = r.body;
     call = h.signedClient({ installKey: A.installKey, secret: A.secret, websiteId: 1 });
     const login = await fetch(`${BASE()}/admin/login`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "email=staff@test.local&password=staff-password-1", redirect: "manual" });
-    cookie = login.headers.getSetCookie().map((c) => c.split(";")[0]).find((c) => c.startsWith("fl_admin="));
+    cookie = login.headers.getSetCookie().map((c) => c.split(";")[0]).find((c) => c.startsWith("fl_admin_woo="));
     const page = await fetch(`${BASE()}/admin/stores/1`, { headers: { cookie } });
     csrf = (await page.text()).match(/name="_csrf" value="([^"]+)"/)[1];
   });
