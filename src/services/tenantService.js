@@ -12,12 +12,22 @@ const installationCache = new Map(); // install_key -> { at, value }
 
 const httpError = (status, message) => Object.assign(new Error(message), { status, userMessage: message });
 
+// A stored secret is decrypted the first time it is read (and then kept on the object). Every authenticated request looks the installation up, and
+// most never need the secret or the store token, so decrypting them eagerly cost two AES-GCM operations per request.
+function lazy(target, name, compute) {
+  let done = false;
+  let value;
+  Object.defineProperty(target, name, { enumerable: true, get() { if (!done) { value = compute(); done = true; } return value; } });
+}
+
 function mapInstallation(row) {
-  return {
+  const installation = {
     id: row.id, merchantId: row.merchant_id, baseUrl: row.base_url, installKey: row.install_key,
-    secret: decrypt(row.secret_enc), wooCredentials: row.woo_credentials_enc ? decrypt(row.woo_credentials_enc) : null,
     status: row.status, wooVersion: row.woo_version, extensionVersion: row.extension_version,
   };
+  lazy(installation, "secret", () => decrypt(row.secret_enc));
+  lazy(installation, "wooCredentials", () => (row.woo_credentials_enc ? decrypt(row.woo_credentials_enc) : null));
+  return installation;
 }
 
 const mapStore = (row) => ({
@@ -136,7 +146,7 @@ async function wooConfigFor(installation, store) {
   const settings = await getStoreSettings(store.id);
   return {
     baseUrl: installation.baseUrl,
-    accessToken: installation.wooCredentials,
+    get accessToken() { return installation.wooCredentials; }, // read (and so decrypted) only by the code that calls the store
     websiteId: store.externalId,
     currencyCode: settings.currencyCode || store.baseCurrency,
   };
