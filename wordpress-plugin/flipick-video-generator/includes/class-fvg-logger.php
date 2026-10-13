@@ -89,11 +89,7 @@ final class FVG_Logger {
         }
     }
 
-    /** Hooks the daily job: WP-Cron fires fvg_rotate_logs at the next 00:05:00 and schedules the following one. */
-    public static function register_cron() {
-        add_action(self::CRON_HOOK, [__CLASS__, 'run_scheduled_rotation']);
-        add_action('init', [__CLASS__, 'ensure_scheduled']);
-    }
+    // The hooks for the daily job (fvg_rotate_logs and the check on init) are added in flipick-video-generator.php so this class loads only when needed.
 
     public static function ensure_scheduled() {
         try {

@@ -3,11 +3,6 @@ defined('ABSPATH') || exit;
 
 /** Shows the published video on the product page (and through the [flipick_video] shortcode). */
 final class FVG_Storefront {
-    public function register() {
-        add_action('woocommerce_after_single_product_summary', [$this, 'render_current'], 5);
-        add_shortcode('flipick_video', [$this, 'shortcode']);
-    }
-
     public function render_current() {
         echo $this->markup(get_the_ID()); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in markup()
     }
