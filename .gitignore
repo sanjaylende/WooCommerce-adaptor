@@ -162,3 +162,6 @@ test-journeys/*results*.json
 
 infra/woocommerce/.env2
 infra/woocommerce/.env2.local
+
+# Regression suite output
+tests/regression/reports/

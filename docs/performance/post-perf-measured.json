@@ -1,0 +1,71 @@
+{
+  "platform": "woo",
+  "measuredAt": "2026-10-13T13:23:53.626Z",
+  "seconds": 6,
+  "concurrency": 10,
+  "routes": {
+    "GET /api/bootstrap": {
+      "requests": 1140,
+      "rps": 190,
+      "p50": 51,
+      "p95": 72.2,
+      "p99": 80.7,
+      "errors": 0,
+      "non2xx": 0
+    },
+    "GET /api/products": {
+      "requests": 2007,
+      "rps": 334.5,
+      "p50": 28.7,
+      "p95": 38.9,
+      "p99": 51.2,
+      "errors": 0,
+      "non2xx": 0
+    },
+    "GET /api/billing/status": {
+      "requests": 1507,
+      "rps": 251.2,
+      "p50": 38.5,
+      "p95": 53.1,
+      "p99": 62.6,
+      "errors": 0,
+      "non2xx": 0
+    },
+    "GET /api/billing/history": {
+      "requests": 1511,
+      "rps": 251.8,
+      "p50": 38.2,
+      "p95": 53.3,
+      "p99": 62.5,
+      "errors": 0,
+      "non2xx": 0
+    },
+    "GET /api/status/:tag/:type": {
+      "requests": 2115,
+      "rps": 352.5,
+      "p50": 27.6,
+      "p95": 36.5,
+      "p99": 45.6,
+      "errors": 0,
+      "non2xx": 0
+    },
+    "GET /api/overlay-families": {
+      "requests": 1481,
+      "rps": 246.8,
+      "p50": 37.8,
+      "p95": 53.1,
+      "p99": 116,
+      "errors": 0,
+      "non2xx": 0
+    },
+    "GET / (page)": {
+      "requests": 7226,
+      "rps": 1204.3,
+      "p50": 8.6,
+      "p95": 10.2,
+      "p99": 14.9,
+      "errors": 0,
+      "non2xx": 0
+    }
+  }
+}

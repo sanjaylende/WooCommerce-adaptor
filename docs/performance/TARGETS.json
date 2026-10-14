@@ -1,0 +1,28 @@
+{
+  "about": "Latency targets for scripts/run-regression (case \"perf\"). p95Ms = p95 measured on the optimised build (see post-perf-measured.json); the run fails when a route is slower than p95Ms + tolerancePercent, with allowanceMs as an absolute floor for timing noise.",
+  "tolerancePercent": 10,
+  "allowanceMs": 15,
+  "routes": {
+    "GET /api/bootstrap": {
+      "p95Ms": 72.2
+    },
+    "GET /api/products": {
+      "p95Ms": 38.9
+    },
+    "GET /api/billing/status": {
+      "p95Ms": 53.1
+    },
+    "GET /api/billing/history": {
+      "p95Ms": 53.3
+    },
+    "GET /api/status/:tag/:type": {
+      "p95Ms": 36.5
+    },
+    "GET /api/overlay-families": {
+      "p95Ms": 53.1
+    },
+    "GET / (page)": {
+      "p95Ms": 10.2
+    }
+  }
+}
