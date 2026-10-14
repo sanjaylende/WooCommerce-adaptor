@@ -18,7 +18,7 @@ final class Flipick_VG_Connection {
             $adapter_url = Flipick_VG_Settings::adapter_url();
             if (!Flipick_VG_Endpoints::is_valid($adapter_url) || !Flipick_VG_Endpoints::is_valid(Flipick_VG_Settings::adapter_public_url())) {
                 Flipick_VG_Logger::error('The adapter address is not a valid http(s) address', ['adapter' => $adapter_url]);
-                return new WP_Error('flipick_vg_bad_url', __('The Flipick service address is missing or invalid in this plugin. Please contact Flipick support.', 'flipick-video-generator-for-woocommerce'));
+                return new WP_Error('flipick_vg_bad_url', __('The Flipick service address is missing or invalid in this plugin. Please contact Flipick support.', 'flipick-video-generator'));
             }
             Flipick_VG_Logger::info('Connecting to adapter', ['adapter' => $adapter_url]);
 
@@ -46,7 +46,7 @@ final class Flipick_VG_Connection {
             if (empty($body['installKey']) || empty($body['secret'])) {
                 self::delete_rest_key($key['id']);
                 Flipick_VG_Logger::error('Adapter registration answered without credentials');
-                return new WP_Error('flipick_vg_bad_response', __('The adapter answered without credentials. Check its logs.', 'flipick-video-generator-for-woocommerce'));
+                return new WP_Error('flipick_vg_bad_response', __('The adapter answered without credentials. Check its logs.', 'flipick-video-generator'));
             }
             Flipick_VG_Settings::update(['install_key' => (string) $body['installKey'], 'connected_at' => time(), 'api_key_id' => (int) $key['id']]);
             Flipick_VG_Settings::set_secret((string) $body['secret']);
@@ -64,11 +64,11 @@ final class Flipick_VG_Connection {
         $code = $error->get_error_code();
         $hint = '';
         if ($code === 'flipick_vg_unreachable') {
-            $hint = __('Check that the adapter is running and that this server can reach the address. In Docker, use host.docker.internal instead of localhost.', 'flipick-video-generator-for-woocommerce');
+            $hint = __('Check that the adapter is running and that this server can reach the address. In Docker, use host.docker.internal instead of localhost.', 'flipick-video-generator');
         } elseif ($code === 'flipick_vg_adapter_404' || $code === 'flipick_vg_adapter_405') {
-            $hint = __('That address answered, but it is not the Flipick adapter. Check the adapter address (no extra path, correct port).', 'flipick-video-generator-for-woocommerce');
+            $hint = __('That address answered, but it is not the Flipick adapter. Check the adapter address (no extra path, correct port).', 'flipick-video-generator');
         } elseif (strpos((string) $code, 'flipick_vg_adapter_5') === 0) {
-            $hint = __('The adapter reported an internal error. Try again, and check its logs.', 'flipick-video-generator-for-woocommerce');
+            $hint = __('The adapter reported an internal error. Try again, and check its logs.', 'flipick-video-generator');
         }
         return $hint === '' ? $error : new WP_Error($code, $error->get_error_message() . ' — ' . $hint, $error->get_error_data());
     }
@@ -119,7 +119,7 @@ final class Flipick_VG_Connection {
         ]);
         if (!$ok) {
             Flipick_VG_Logger::error('Could not create a WooCommerce REST key', ['db_error' => $wpdb->last_error]);
-            return new WP_Error('flipick_vg_key', __('Could not create a WooCommerce API key.', 'flipick-video-generator-for-woocommerce'));
+            return new WP_Error('flipick_vg_key', __('Could not create a WooCommerce API key.', 'flipick-video-generator'));
         }
         return ['id' => (int) $wpdb->insert_id, 'ck' => $ck, 'cs' => $cs];
     }

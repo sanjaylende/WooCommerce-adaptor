@@ -35,8 +35,8 @@ final class Flipick_VG_Endpoints {
     }
 
     /** The service's public legal pages, shown before a store is connected and in the privacy-policy text. Must be live before the plugin is submitted. */
-    const TERMS_URL = 'https://flipickvideogenerator.com/terms/';
-    const PRIVACY_URL = 'https://flipickvideogenerator.com/privacy/';
+    const TERMS_URL = 'https://flipick.com/terms';
+    const PRIVACY_URL = 'https://flipick.com/policy';
 
     /** Only http(s) addresses are ever used; anything else counts as "not set". */
     public static function is_valid($url) {

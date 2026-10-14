@@ -1,17 +1,17 @@
 <?php
 /**
  * Plugin Name:       Flipick Video Generator for WooCommerce
- * Plugin URI:         https://flipickvideogenerator.com/
+ * Plugin URI:         https://flipick.com/
  * Description:       Generate product videos for your WooCommerce products with the Flipick video service and show them on your product pages.
  * Version:           1.0.0
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
  * Author:            Flipick
- * Author URI:        https://flipickvideogenerator.com/
+ * Author URI:        https://flipick.com/
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       flipick-video-generator-for-woocommerce
+ * Text Domain:       flipick-video-generator
  *
  * WC requires at least: 8.0
  */
@@ -68,7 +68,7 @@ add_action('plugins_loaded', function () {
     try {
         if (!class_exists('WooCommerce')) {
             add_action('admin_notices', function () {
-                echo '<div class="notice notice-error"><p>' . esc_html__('Flipick Video Generator needs WooCommerce to be active.', 'flipick-video-generator-for-woocommerce') . '</p></div>';
+                echo '<div class="notice notice-error"><p>' . esc_html__('Flipick Video Generator needs WooCommerce to be active.', 'flipick-video-generator') . '</p></div>';
             });
             Flipick_VG_Logger::warning('WooCommerce is not active; plugin idle');
             return;

@@ -8,7 +8,7 @@ const { ok } = reporter();
   await login(page);
   await page.goto(`${WP}/wp-admin/plugin-install.php?tab=upload`, { waitUntil: 'domcontentloaded' });
   if (!(await page.locator('#pluginzip').count())) await page.click('.upload-view-toggle').catch(() => {});
-  await page.setInputFiles('#pluginzip', path.join(DIR, 'flipick-video-generator.zip'));
+  await page.setInputFiles('#pluginzip', path.join(DIR, '..', '..', 'flipick-video-generator-for-woocommerce', 'dist', 'flipick-video-generator.zip') /* built by the plugin repo: node bin/build-zip.js */);
   await page.click('#install-plugin-submit');
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(3000);

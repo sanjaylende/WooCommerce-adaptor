@@ -32,14 +32,14 @@ final class Flipick_VG_Adapter_Client {
         try {
             $base = Flipick_VG_Settings::adapter_url();
             if ($base === '') {
-                return new WP_Error('flipick_vg_no_adapter', __('The adapter URL is not set.', 'flipick-video-generator-for-woocommerce'));
+                return new WP_Error('flipick_vg_no_adapter', __('The adapter URL is not set.', 'flipick-video-generator'));
             }
             $raw = $payload === null ? '' : wp_json_encode($payload);
             $headers = ['Content-Type' => 'application/json', 'Accept' => 'application/json'];
             if ($sign) {
                 $secret = Flipick_VG_Settings::secret();
                 if ($secret === '') {
-                    return new WP_Error('flipick_vg_not_connected', __('This store is not connected to Flipick.', 'flipick-video-generator-for-woocommerce'));
+                    return new WP_Error('flipick_vg_not_connected', __('This store is not connected to Flipick.', 'flipick-video-generator'));
                 }
                 $ts = time();
                 $nonce = wp_generate_uuid4();
@@ -61,7 +61,7 @@ final class Flipick_VG_Adapter_Client {
                 Flipick_VG_Logger::error('Adapter request failed', ['method' => $method, 'path' => $path, 'error' => $response->get_error_message(), 'ms' => $ms]);
                 return new WP_Error('flipick_vg_unreachable', sprintf(
                     /* translators: %s: error message */
-                    __('Could not reach the Flipick adapter: %s', 'flipick-video-generator-for-woocommerce'), $response->get_error_message()
+                    __('Could not reach the Flipick adapter: %s', 'flipick-video-generator'), $response->get_error_message()
                 ));
             }
             $status = (int) wp_remote_retrieve_response_code($response);

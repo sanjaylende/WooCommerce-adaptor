@@ -20,7 +20,7 @@ final class Flipick_VG_Admin {
         add_action('manage_product_posts_custom_column', [$this, 'column_content'], 10, 2);
         add_filter('post_row_actions', [$this, 'row_action'], 10, 2);
         add_filter('plugin_action_links_' . plugin_basename(FLIPICK_VG_FILE), function ($links) {
-            array_unshift($links, '<a href="' . esc_url(self::page_url()) . '">' . esc_html__('Flipick Video Generator', 'flipick-video-generator-for-woocommerce') . '</a>');
+            array_unshift($links, '<a href="' . esc_url(self::page_url()) . '">' . esc_html__('Flipick Video Generator', 'flipick-video-generator') . '</a>');
             return $links;
         });
     }
@@ -30,7 +30,7 @@ final class Flipick_VG_Admin {
     }
 
     public function menu() {
-        add_submenu_page('woocommerce', __('Flipick Video Generator', 'flipick-video-generator-for-woocommerce'), __('Flipick Video Generator', 'flipick-video-generator-for-woocommerce'), self::CAP, self::SLUG, [$this, 'render']);
+        add_submenu_page('woocommerce', __('Flipick Video Generator', 'flipick-video-generator'), __('Flipick Video Generator', 'flipick-video-generator'), self::CAP, self::SLUG, [$this, 'render']);
     }
 
     /** Style and script of the plugin's own page, loaded on that page only. */
@@ -47,23 +47,23 @@ final class Flipick_VG_Admin {
         if (!function_exists('wp_add_privacy_policy_content')) {
             return;
         }
-        $text = '<h2>' . esc_html__('Flipick Video Generator', 'flipick-video-generator-for-woocommerce') . '</h2><p>'
-            . esc_html__('When an administrator connects the store to the Flipick video service, this plugin sends the site address, site name, the administrator\'s e-mail address, the store country, the WooCommerce version and a WooCommerce API key to the Flipick service (an external service run by Flipick). The service then reads the store\'s product data (names, descriptions, prices, categories and images) through the WooCommerce REST API and receives product-change notifications (webhooks). It generates the videos on its servers and stores them; the video address is saved in the product and shown to visitors, whose browsers load the video file from Flipick\'s storage. No personal data of the store\'s customers or orders is sent. Disconnecting the store, or deleting the plugin, removes the API key and tells the service.', 'flipick-video-generator-for-woocommerce')
+        $text = '<h2>' . esc_html__('Flipick Video Generator', 'flipick-video-generator') . '</h2><p>'
+            . esc_html__('When an administrator connects the store to the Flipick video service, this plugin sends the site address, site name, the administrator\'s e-mail address, the store country, the WooCommerce version and a WooCommerce API key to the Flipick service (an external service run by Flipick). The service then reads the store\'s product data (names, descriptions, prices, categories and images) through the WooCommerce REST API and receives product-change notifications (webhooks). It generates the videos on its servers and stores them; the video address is saved in the product and shown to visitors, whose browsers load the video file from Flipick\'s storage. No personal data of the store\'s customers or orders is sent. Disconnecting the store, or deleting the plugin, removes the API key and tells the service.', 'flipick-video-generator')
             . '</p><p>' . sprintf(
                 /* translators: 1: terms of service address, 2: privacy policy address */
-                esc_html__('Terms: %1$s. Privacy policy: %2$s.', 'flipick-video-generator-for-woocommerce'),
+                esc_html__('Terms: %1$s. Privacy policy: %2$s.', 'flipick-video-generator'),
                 esc_url(Flipick_VG_Endpoints::TERMS_URL),
                 esc_url(Flipick_VG_Endpoints::PRIVACY_URL)
             ) . '</p>';
-        wp_add_privacy_policy_content(__('Flipick Video Generator', 'flipick-video-generator-for-woocommerce'), wp_kses_post($text));
+        wp_add_privacy_policy_content(__('Flipick Video Generator', 'flipick-video-generator'), wp_kses_post($text));
     }
 
     public function render() {
         try {
             if (!current_user_can(self::CAP)) {
-                wp_die(esc_html__('You do not have permission to open this page.', 'flipick-video-generator-for-woocommerce'));
+                wp_die(esc_html__('You do not have permission to open this page.', 'flipick-video-generator'));
             }
-            echo '<div class="wrap"><h1>' . esc_html__('Flipick Video Generator', 'flipick-video-generator-for-woocommerce') . '</h1>';
+            echo '<div class="wrap"><h1>' . esc_html__('Flipick Video Generator', 'flipick-video-generator') . '</h1>';
             $this->notices();
             if (Flipick_VG_Settings::is_connected()) {
                 $this->render_connected();
@@ -74,7 +74,7 @@ final class Flipick_VG_Admin {
             echo '</div>';
         } catch (Throwable $e) {
             Flipick_VG_Logger::error('Admin page failed to render', ['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
-            echo '<div class="notice notice-error"><p>' . esc_html__('Something went wrong. Details are in WooCommerce > Status > Logs (flipick-video-generator).', 'flipick-video-generator-for-woocommerce') . '</p></div>';
+            echo '<div class="notice notice-error"><p>' . esc_html__('Something went wrong. Details are in WooCommerce > Status > Logs (flipick-video-generator).', 'flipick-video-generator') . '</p></div>';
         }
     }
 
@@ -90,13 +90,13 @@ final class Flipick_VG_Admin {
         usort($files, function ($x, $y) { return $y['time'] <=> $x['time']; });
         ?>
         <details class="flipick-vg-logs">
-            <summary><strong><?php esc_html_e('Logs', 'flipick-video-generator-for-woocommerce'); ?></strong>
-                <span class="description">(<?php esc_html_e('rotated daily at 00:05 and whenever a file passes 10 MB; old files are zipped', 'flipick-video-generator-for-woocommerce'); ?>)</span></summary>
+            <summary><strong><?php esc_html_e('Logs', 'flipick-video-generator'); ?></strong>
+                <span class="description">(<?php esc_html_e('rotated daily at 00:05 and whenever a file passes 10 MB; old files are zipped', 'flipick-video-generator'); ?>)</span></summary>
             <?php if (!$files) : ?>
-                <p><?php esc_html_e('No log files yet.', 'flipick-video-generator-for-woocommerce'); ?></p>
+                <p><?php esc_html_e('No log files yet.', 'flipick-video-generator'); ?></p>
             <?php else : ?>
                 <table class="widefat striped">
-                    <thead><tr><th><?php esc_html_e('File', 'flipick-video-generator-for-woocommerce'); ?></th><th><?php esc_html_e('Size', 'flipick-video-generator-for-woocommerce'); ?></th><th><?php esc_html_e('Last written', 'flipick-video-generator-for-woocommerce'); ?></th></tr></thead>
+                    <thead><tr><th><?php esc_html_e('File', 'flipick-video-generator'); ?></th><th><?php esc_html_e('Size', 'flipick-video-generator'); ?></th><th><?php esc_html_e('Last written', 'flipick-video-generator'); ?></th></tr></thead>
                     <tbody>
                     <?php foreach (array_slice($files, 0, 60) as $f) : ?>
                         <tr>
@@ -121,7 +121,7 @@ final class Flipick_VG_Admin {
         $name = isset($_GET['file']) ? sanitize_file_name(wp_unslash($_GET['file'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- the nonce is checked in guard() above
         $path = Flipick_VG_Logger::directory() . '/' . $name;
         if (!self::is_log_name($name) || !is_file($path)) {
-            wp_die(esc_html__('Log file not found.', 'flipick-video-generator-for-woocommerce'), '', ['response' => 404]);
+            wp_die(esc_html__('Log file not found.', 'flipick-video-generator'), '', ['response' => 404]);
         }
         nocache_headers();
         header('X-Content-Type-Options: nosniff');
@@ -144,20 +144,20 @@ final class Flipick_VG_Admin {
     private function render_connect_form() {
         ?>
         <div class="flipick-vg-disclosure">
-            <p><?php esc_html_e('Connect this store to the Flipick video service to generate product videos. Flipick is an external service: this plugin does nothing until you press the button below.', 'flipick-video-generator-for-woocommerce'); ?></p>
-            <p><strong><?php esc_html_e('When you press Connect, the following is sent to Flipick:', 'flipick-video-generator-for-woocommerce'); ?></strong></p>
+            <p><?php esc_html_e('Connect this store to the Flipick video service to generate product videos. Flipick is an external service: this plugin does nothing until you press the button below.', 'flipick-video-generator'); ?></p>
+            <p><strong><?php esc_html_e('When you press Connect, the following is sent to Flipick:', 'flipick-video-generator'); ?></strong></p>
             <ul class="ul-disc">
-                <li><?php esc_html_e('your site address and name, your e-mail address, the store country and the WooCommerce version;', 'flipick-video-generator-for-woocommerce'); ?></li>
-                <li><?php esc_html_e('a new WooCommerce API key (read/write) that lets Flipick read your products and save the video address in them; it is created now and deleted when you disconnect or delete the plugin.', 'flipick-video-generator-for-woocommerce'); ?></li>
+                <li><?php esc_html_e('your site address and name, your e-mail address, the store country and the WooCommerce version;', 'flipick-video-generator'); ?></li>
+                <li><?php esc_html_e('a new WooCommerce API key (read/write) that lets Flipick read your products and save the video address in them; it is created now and deleted when you disconnect or delete the plugin.', 'flipick-video-generator'); ?></li>
             </ul>
-            <p><?php esc_html_e('Afterwards Flipick reads your product data (names, descriptions, prices, categories, images) and receives product-change notifications. No customer or order data is sent. The free plan includes a limited number of videos; further videos need a paid plan with Flipick.', 'flipick-video-generator-for-woocommerce'); ?></p>
+            <p><?php esc_html_e('Afterwards Flipick reads your product data (names, descriptions, prices, categories, images) and receives product-change notifications. No customer or order data is sent. The free plan includes a limited number of videos; further videos need a paid plan with Flipick.', 'flipick-video-generator'); ?></p>
             <p>
                 <?php
                 printf(
                     /* translators: 1: link to the terms of service, 2: link to the privacy policy */
-                    esc_html__('By connecting you agree to the %1$s and the %2$s.', 'flipick-video-generator-for-woocommerce'),
-                    '<a href="' . esc_url(Flipick_VG_Endpoints::TERMS_URL) . '" target="_blank" rel="noopener noreferrer">' . esc_html__('Terms of Service', 'flipick-video-generator-for-woocommerce') . '</a>',
-                    '<a href="' . esc_url(Flipick_VG_Endpoints::PRIVACY_URL) . '" target="_blank" rel="noopener noreferrer">' . esc_html__('Privacy Policy', 'flipick-video-generator-for-woocommerce') . '</a>'
+                    esc_html__('By connecting you agree to the %1$s and the %2$s.', 'flipick-video-generator'),
+                    '<a href="' . esc_url(Flipick_VG_Endpoints::TERMS_URL) . '" target="_blank" rel="noopener noreferrer">' . esc_html__('Terms of Service', 'flipick-video-generator') . '</a>',
+                    '<a href="' . esc_url(Flipick_VG_Endpoints::PRIVACY_URL) . '" target="_blank" rel="noopener noreferrer">' . esc_html__('Privacy Policy', 'flipick-video-generator') . '</a>'
                 );
                 ?>
             </p>
@@ -165,7 +165,7 @@ final class Flipick_VG_Admin {
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="flipick_vg_connect">
             <?php wp_nonce_field('flipick_vg_connect'); ?>
-            <?php submit_button(__('Connect to Flipick', 'flipick-video-generator-for-woocommerce')); ?>
+            <?php submit_button(__('Connect to Flipick', 'flipick-video-generator')); ?>
         </form>
         <?php
     }
@@ -179,15 +179,15 @@ final class Flipick_VG_Admin {
             <?php
             printf(
                 /* translators: %s: date */
-                esc_html__('Connected on %s.', 'flipick-video-generator-for-woocommerce'),
+                esc_html__('Connected on %s.', 'flipick-video-generator'),
                 esc_html(wp_date(get_option('date_format') . ' ' . get_option('time_format'), (int) Flipick_VG_Settings::get('connected_at')))
             );
             ?>
-            <?php $this->post_button('flipick_vg_refresh', __('Refresh products', 'flipick-video-generator-for-woocommerce'), 'secondary small'); ?>
-            <?php $this->post_button('flipick_vg_resync', __('Re-sync store', 'flipick-video-generator-for-woocommerce'), 'secondary small'); ?>
-            <?php $this->post_button('flipick_vg_disconnect', __('Disconnect', 'flipick-video-generator-for-woocommerce'), 'link-delete small', __('Disconnect this store from Flipick? Existing videos on product pages stay.', 'flipick-video-generator-for-woocommerce')); ?>
+            <?php $this->post_button('flipick_vg_refresh', __('Refresh products', 'flipick-video-generator'), 'secondary small'); ?>
+            <?php $this->post_button('flipick_vg_resync', __('Re-sync store', 'flipick-video-generator'), 'secondary small'); ?>
+            <?php $this->post_button('flipick_vg_disconnect', __('Disconnect', 'flipick-video-generator'), 'link-delete small', __('Disconnect this store from Flipick? Existing videos on product pages stay.', 'flipick-video-generator')); ?>
         </p>
-        <iframe class="flipick-vg-frame" title="<?php esc_attr_e('Flipick Video Generator', 'flipick-video-generator-for-woocommerce'); ?>" src="<?php echo esc_url($src); ?>" referrerpolicy="strict-origin"></iframe>
+        <iframe class="flipick-vg-frame" title="<?php esc_attr_e('Flipick Video Generator', 'flipick-video-generator'); ?>" src="<?php echo esc_url($src); ?>" referrerpolicy="strict-origin"></iframe>
         <?php
     }
 
@@ -208,7 +208,7 @@ final class Flipick_VG_Admin {
 
     private function guard($nonce_action) {
         if (!current_user_can(self::CAP)) {
-            wp_die(esc_html__('You do not have permission to do this.', 'flipick-video-generator-for-woocommerce'), '', ['response' => 403]);
+            wp_die(esc_html__('You do not have permission to do this.', 'flipick-video-generator'), '', ['response' => 403]);
         }
         check_admin_referer($nonce_action);
     }
@@ -218,15 +218,15 @@ final class Flipick_VG_Admin {
         $result = Flipick_VG_Connection::connect();
         if (is_wp_error($result)) {
             /* translators: %s: error message */
-            $this->back(sprintf(__('Could not connect: %s', 'flipick-video-generator-for-woocommerce'), $result->get_error_message()), 'error');
+            $this->back(sprintf(__('Could not connect: %s', 'flipick-video-generator'), $result->get_error_message()), 'error');
         }
-        $this->back(__('Store connected.', 'flipick-video-generator-for-woocommerce'));
+        $this->back(__('Store connected.', 'flipick-video-generator'));
     }
 
     public function handle_disconnect() {
         $this->guard('flipick_vg_disconnect');
         Flipick_VG_Connection::disconnect();
-        $this->back(__('Store disconnected.', 'flipick-video-generator-for-woocommerce'));
+        $this->back(__('Store disconnected.', 'flipick-video-generator'));
     }
 
     public function handle_resync() {
@@ -234,9 +234,9 @@ final class Flipick_VG_Admin {
         $result = Flipick_VG_Connection::resync();
         if (is_wp_error($result)) {
             /* translators: %s: error message */
-            $this->back(sprintf(__('Re-sync failed: %s', 'flipick-video-generator-for-woocommerce'), $result->get_error_message()), 'error');
+            $this->back(sprintf(__('Re-sync failed: %s', 'flipick-video-generator'), $result->get_error_message()), 'error');
         }
-        $this->back(__('Store re-synced.', 'flipick-video-generator-for-woocommerce'));
+        $this->back(__('Store re-synced.', 'flipick-video-generator'));
     }
 
     public function handle_refresh() {
@@ -245,10 +245,10 @@ final class Flipick_VG_Admin {
         delete_transient(self::STATUS_TRANSIENT);
         if (is_wp_error($result)) {
             /* translators: %s: error message */
-            $this->back(sprintf(__('Refresh failed: %s', 'flipick-video-generator-for-woocommerce'), $result->get_error_message()), 'error');
+            $this->back(sprintf(__('Refresh failed: %s', 'flipick-video-generator'), $result->get_error_message()), 'error');
         }
         /* translators: %d: number of products */
-        $this->back(sprintf(__('Reloaded %d products from WooCommerce.', 'flipick-video-generator-for-woocommerce'), (int) ($result['body']['count'] ?? 0)));
+        $this->back(sprintf(__('Reloaded %d products from WooCommerce.', 'flipick-video-generator'), (int) ($result['body']['count'] ?? 0)));
     }
 
     /**
@@ -284,11 +284,11 @@ final class Flipick_VG_Admin {
         }
         $status = $video['status'];
         if ($status === 'ready') {
-            $text = !empty($video['pushedToStore']) ? __('Published', 'flipick-video-generator-for-woocommerce') : __('Ready', 'flipick-video-generator-for-woocommerce');
+            $text = !empty($video['pushedToStore']) ? __('Published', 'flipick-video-generator') : __('Ready', 'flipick-video-generator');
         } elseif ($status === 'generating') {
-            $text = __('Rendering', 'flipick-video-generator-for-woocommerce') . (isset($video['progressPct']) ? ' ' . (int) $video['progressPct'] . '%' : '');
+            $text = __('Rendering', 'flipick-video-generator') . (isset($video['progressPct']) ? ' ' . (int) $video['progressPct'] . '%' : '');
         } elseif ($status === 'error') {
-            $text = __('Failed', 'flipick-video-generator-for-woocommerce');
+            $text = __('Failed', 'flipick-video-generator');
         } else {
             return '';
         }
@@ -296,7 +296,7 @@ final class Flipick_VG_Admin {
     }
 
     public function column($columns) {
-        $columns['flipick_vg_video'] = __('Video', 'flipick-video-generator-for-woocommerce');
+        $columns['flipick_vg_video'] = __('Video', 'flipick-video-generator');
         return $columns;
     }
 
@@ -306,18 +306,18 @@ final class Flipick_VG_Admin {
         }
         $states = Flipick_VG_Settings::is_connected() ? $this->video_states() : [];
         $videos = $states[(string) $post_id] ?? [];
-        $html = $this->badge(__('Hero', 'flipick-video-generator-for-woocommerce'), $videos['hero_product'] ?? null)
-            . $this->badge(__('Lifestyle', 'flipick-video-generator-for-woocommerce'), $videos['lifestyle'] ?? null)
-            . $this->badge(__('Transitions', 'flipick-video-generator-for-woocommerce'), $videos['image_transition'] ?? null);
+        $html = $this->badge(__('Hero', 'flipick-video-generator'), $videos['hero_product'] ?? null)
+            . $this->badge(__('Lifestyle', 'flipick-video-generator'), $videos['lifestyle'] ?? null)
+            . $this->badge(__('Transitions', 'flipick-video-generator'), $videos['image_transition'] ?? null);
         if ((string) get_post_meta($post_id, FLIPICK_VG_META_VIDEO_URL, true) !== '') {
-            $html .= '<div title="' . esc_attr__('A Flipick video is shown on the product page', 'flipick-video-generator-for-woocommerce') . '">&#9654; ' . esc_html__('On product page', 'flipick-video-generator-for-woocommerce') . '</div>';
+            $html .= '<div title="' . esc_attr__('A Flipick video is shown on the product page', 'flipick-video-generator') . '">&#9654; ' . esc_html__('On product page', 'flipick-video-generator') . '</div>';
         }
         echo $html !== '' ? $html : '&mdash;'; // phpcs:ignore WordPress.Security.EscapeOutput -- every part is escaped above
     }
 
     public function row_action($actions, $post) {
         if ($post->post_type === 'product' && Flipick_VG_Settings::is_connected() && current_user_can(self::CAP)) {
-            $actions['flipick_vg_video'] = '<a href="' . esc_url(self::page_url(['product_id' => (int) $post->ID])) . '">' . esc_html__('Generate video', 'flipick-video-generator-for-woocommerce') . '</a>';
+            $actions['flipick_vg_video'] = '<a href="' . esc_url(self::page_url(['product_id' => (int) $post->ID])) . '">' . esc_html__('Generate video', 'flipick-video-generator') . '</a>';
         }
         return $actions;
     }

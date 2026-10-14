@@ -32,8 +32,8 @@ This plugin cannot work without an external service. It does nothing and sends n
 
 **Service: Flipick video service** (operated by Flipick). The plugin talks to `https://woocommerce.flipickvideogenerator.com`.
 
-* Terms of Service: https://flipickvideogenerator.com/terms/
-* Privacy Policy: https://flipickvideogenerator.com/privacy/
+* Terms of Service: https://flipick.com/terms
+* Privacy Policy: https://flipick.com/policy
 
 **What it is used for and when data is sent**
 
