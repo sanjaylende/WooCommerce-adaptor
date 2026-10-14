@@ -74,6 +74,10 @@ No customer or order data is sent. See "External services" for exactly what is s
 
 In `wp-content/uploads/flipick-video-generator-logs/` (closed to the web with an .htaccess file and an index file; the folder is deleted with the plugin). They rotate every day at 00:05 (site timezone) and whenever a file passes 10 MB; the old file is zipped. You can list and download them under WooCommerce > Flipick Video Generator > Logs. Secrets are never logged.
 
+= What does my store need? =
+
+The Flipick service must be able to reach your shop, so: the site must use https on a public address (not http, localhost, or a staging site behind a password); WooCommerce 8.0 or newer, WordPress 6.2 or newer, PHP 7.4 or newer; the WooCommerce REST API must be reachable (pretty permalinks on, and no security plugin, firewall or host rule that blocks /wp-json/wc/v3/ or removes the Authorization header); and WP-Cron should be running. If Connect fails, the message on the plugin page says which of these it could not do.
+
 = How do I show the video somewhere else? =
 
 Use the shortcode `[flipick_video id="123"]` with the product's id (without `id` it uses the current product).
