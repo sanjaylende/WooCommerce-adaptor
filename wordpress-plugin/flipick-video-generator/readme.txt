@@ -1,39 +1,97 @@
 === Flipick Video Generator for WooCommerce ===
 Contributors: flipick
+Tags: woocommerce, product video, video generator, ecommerce, ai
 Requires at least: 6.2
-Tested up to: 6.7
+Tested up to: 7.1
 Requires PHP: 7.4
+Requires Plugins: woocommerce
 Stable tag: 1.0.0
 License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Generate product videos with Flipick and show them on your WooCommerce product pages.
+Generate product videos for your WooCommerce products with the Flipick video service and show them on your product pages.
 
 == Description ==
 
-Connect your store to the Flipick video adapter, choose a product, generate a video, and publish it to the product page.
+Flipick Video Generator turns the photos of your WooCommerce products into short product videos. You pick a product in the Flipick page inside your WordPress admin, choose a video style, and the Flipick service renders the video. One click publishes it to the product page.
 
-* Connect / Disconnect / Re-sync from WooCommerce > Flipick Video Generator.
-* Creates one WooCommerce REST API key (Read/Write) for the adapter; Disconnect removes it.
-* Registers signed webhooks (product created / updated / deleted) so the adapter's catalog stays fresh.
-* Shows the published video after the product summary, or anywhere with [flipick_video id="123"].
-* Adds a "Video" column and a "Generate video" row action to the product list.
-* Declares compatibility with High-Performance Order Storage (it never touches orders).
+**This plugin needs the Flipick service.** The videos are made by Flipick's servers, not on your site. The plugin connects your store to that service, shows the service's app inside your WordPress admin and displays the finished video on the storefront. The service has a free plan with a limited number of videos; more videos need a paid plan, bought and managed in the Flipick app (see "External services" below).
+
+What you get:
+
+* A **Flipick Video Generator** page under WooCommerce, where you connect the store and use the Flipick app.
+* A **Video** column and a **Generate video** row action on the products list.
+* The published video shown after the product summary on the product page, or anywhere with the shortcode `[flipick_video id="123"]`.
+* Connect, Disconnect and Re-sync buttons. Disconnect removes the WooCommerce API key the plugin created.
+* Compatibility with High-Performance Order Storage (the plugin never touches orders).
+* Log files you can download from the plugin page, rotated daily and by size (see the FAQ).
+
+== External services ==
+
+This plugin cannot work without an external service. It does nothing and sends nothing until a store administrator presses **Connect to Flipick** on the plugin page, after reading the disclosure shown there.
+
+**Service: Flipick video service** (operated by Flipick). The plugin talks to `https://woocommerce.flipickvideogenerator.com`.
+
+* Terms of Service: https://flipickvideogenerator.com/terms/
+* Privacy Policy: https://flipickvideogenerator.com/privacy/
+
+**What it is used for and when data is sent**
+
+1. *When you press Connect* (once, by an administrator): the plugin creates a WooCommerce REST API key (read/write) and sends the following to the service: site address, site name, the administrator's e-mail address, the store country, the WooCommerce version, the plugin version and that API key. The service stores the key encrypted.
+2. *While the store is connected:* the service reads your product data (names, descriptions, prices, categories, images) through the WooCommerce REST API, and WooCommerce sends the service signed notifications (webhooks) when a product is created, updated or deleted. The plugin also makes signed requests to the service from the server (for example to refresh the status shown in the products list and to open the app).
+3. *When an administrator opens the plugin page:* the app of the service is shown in a frame; the browser loads it from the service address above. A single-use sign-in token that expires in five minutes is passed to it; the secret never reaches the browser.
+4. *Video generation:* the service generates videos on its own servers from your product images and the options you choose, and stores the finished video. The video address is written to the product (meta key `_flipick_video_url`). **Visitors' browsers load the video file from the service's storage**, so the video address and the visitor's IP address are visible to that storage when a product page with a video is viewed.
+5. *Plans and payment:* the free plan includes a limited number of videos. Paid plans and top-ups are bought inside the service's app (payment is handled by the service and its payment provider, not by this plugin); the plugin itself has no paid features and no locked functionality.
+
+No customer, order or visitor personal data is sent to the service by the plugin. Disconnecting the store, or deleting the plugin, deletes the API key and the webhooks and tells the service; the service keeps the merchant's account data as described in its Privacy Policy.
 
 == Installation ==
 
-1. Copy the `flipick-video-generator` folder to `wp-content/plugins/` and activate it (WooCommerce must be active).
-2. WooCommerce > Flipick Video Generator: press Connect to Flipick.
+1. Make sure WooCommerce is active.
+2. Install and activate the plugin (Plugins > Add New, or upload the zip).
+3. Go to WooCommerce > Flipick Video Generator, read the notice and press **Connect to Flipick**.
+4. Pick a product in the Flipick app and generate a video; publish it to the product page.
 
-== Data sent to the adapter ==
+== Frequently Asked Questions ==
 
-Site URL, site name, admin e-mail, store country, WooCommerce version, and a Read/Write REST key pair (stored encrypted by the adapter).
-Product data is read by the adapter through the WooCommerce REST API; nothing is sent from the browser.
+= Does the plugin work without the Flipick service? =
 
-== Logs ==
+No. The videos are generated by the service; the plugin connects the store to it and displays the result.
 
-wp-content/uploads/flipick-video-generator-logs/ (closed to the web; listed and downloadable under WooCommerce > Flipick Video Generator > Logs). Rotated every day at 00:05 (site timezone) and whenever a file passes 10 MB: the old file is zipped and a new one started. Secrets are never logged.
+= What does it cost? =
+
+The plugin is free. The service has a free plan with a limited number of videos; further videos need a paid plan, shown in the Flipick app before you buy.
+
+= What happens to my videos if I disconnect or delete the plugin? =
+
+The API key and webhooks are removed and the service is told. Videos already published to product pages stay on the pages (the video address stays in the product) for as long as the service keeps the file.
+
+= Does it send my customers' data anywhere? =
+
+No customer or order data is sent. See "External services" for exactly what is sent.
+
+= Where are the logs? =
+
+In `wp-content/uploads/flipick-video-generator-logs/` (closed to the web with an .htaccess file and an index file; the folder is deleted with the plugin). They rotate every day at 00:05 (site timezone) and whenever a file passes 10 MB; the old file is zipped. You can list and download them under WooCommerce > Flipick Video Generator > Logs. Secrets are never logged.
+
+= How do I show the video somewhere else? =
+
+Use the shortcode `[flipick_video id="123"]` with the product's id (without `id` it uses the current product).
+
+== Screenshots ==
+
+1. The Flipick Video Generator page before connecting, with the disclosure of what is sent.
+2. The Flipick app inside the WordPress admin: the product list with video status.
+3. The generate dialog.
+4. A published video on a product page.
 
 == Changelog ==
 
 = 1.0.0 =
 * First release.
+
+== Upgrade Notice ==
+
+= 1.0.0 =
+First release.
+

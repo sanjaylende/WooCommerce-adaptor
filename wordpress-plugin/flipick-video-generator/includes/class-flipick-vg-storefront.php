@@ -2,7 +2,7 @@
 defined('ABSPATH') || exit;
 
 /** Shows the published video on the product page (and through the [flipick_video] shortcode). */
-final class FVG_Storefront {
+final class Flipick_VG_Storefront {
     public function render_current() {
         echo $this->markup(get_the_ID()); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in markup()
     }
@@ -44,17 +44,17 @@ final class FVG_Storefront {
             if (post_password_required($product_id)) {
                 return '';
             }
-            $url = (string) get_post_meta($product_id, FVG_META_VIDEO_URL, true);
+            $url = (string) get_post_meta($product_id, FLIPICK_VG_META_VIDEO_URL, true);
             // Only absolute http(s) URLs: the meta is written through the REST API, never trusted as markup.
             if ($url === '' || !self::is_http_url($url)) {
                 return '';
             }
-            $thumb = (string) get_post_meta($product_id, FVG_META_VIDEO_THUMB, true);
+            $thumb = (string) get_post_meta($product_id, FLIPICK_VG_META_VIDEO_THUMB, true);
             $poster = ($thumb !== '' && self::is_http_url($thumb)) ? ' poster="' . esc_url($thumb) . '"' : '';
-            return '<div class="fvg-video" style="margin:0 0 2em;max-width:100%"><video controls playsinline preload="metadata" style="width:100%;height:auto"'
-                . $poster . ' src="' . esc_url($url) . '"></video></div>';
+            wp_enqueue_style('flipick-vg-storefront', plugins_url('assets/storefront.css', FLIPICK_VG_FILE), [], FLIPICK_VG_VERSION);
+            return '<div class="flipick-vg-video"><video controls playsinline preload="metadata"' . $poster . ' src="' . esc_url($url) . '"></video></div>';
         } catch (Throwable $e) {
-            FVG_Logger::error('Storefront video failed to render', ['product' => $product_id, 'error' => $e->getMessage()]);
+            Flipick_VG_Logger::error('Storefront video failed to render', ['product' => $product_id, 'error' => $e->getMessage()]);
             return '';
         }
     }

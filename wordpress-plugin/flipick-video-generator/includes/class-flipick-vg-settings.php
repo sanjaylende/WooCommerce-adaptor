@@ -5,11 +5,21 @@ defined('ABSPATH') || exit;
  * Plugin settings in one option. The installation secret is encrypted at rest with a key derived from the site's own
  * WordPress salts (libsodium), so a copy of the options table alone does not reveal it.
  */
-final class FVG_Settings {
-    const OPTION = 'fvg_settings';
+final class Flipick_VG_Settings {
+    const OPTION = 'flipick_vg_settings';
 
     public static function all() {
-        $stored = get_option(self::OPTION, []);
+        $stored = get_option(self::OPTION, null);
+        if ($stored === null) {
+            // Sites that ran an early build kept the settings under the old option name: take them over once.
+            $old = get_option('fvg_settings', null);
+            if (is_array($old)) {
+                add_option(self::OPTION, $old, '', false);
+                delete_option('fvg_settings');
+                wp_clear_scheduled_hook('fvg_rotate_logs');
+                $stored = $old;
+            }
+        }
         $defaults = [
             'install_key' => '',
             'secret_enc' => '',
@@ -33,14 +43,14 @@ final class FVG_Settings {
         self::update(['install_key' => '', 'secret_enc' => '', 'connected_at' => 0, 'api_key_id' => 0, 'webhook_ids' => []]);
     }
 
-    /** How the SERVER reaches the adapter (see FVG_Endpoints). */
+    /** How the SERVER reaches the adapter (see Flipick_VG_Endpoints). */
     public static function adapter_url() {
-        return FVG_Endpoints::server_url();
+        return Flipick_VG_Endpoints::server_url();
     }
 
-    /** How the BROWSER reaches the adapter, for the frame (see FVG_Endpoints). */
+    /** How the BROWSER reaches the adapter, for the frame (see Flipick_VG_Endpoints). */
     public static function adapter_public_url() {
-        return FVG_Endpoints::browser_url();
+        return Flipick_VG_Endpoints::browser_url();
     }
 
     public static function is_connected() {

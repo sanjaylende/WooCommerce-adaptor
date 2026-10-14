@@ -128,7 +128,7 @@ describe("input validation", () => {
       bad(await h.api("POST", "/api/v1/register", { body: { ...base, magentoToken: "x" } }), "a Magento field is not part of the WooCommerce contract");
     });
 
-    it("registration accepts exactly what the WordPress plugin sends (class-fvg-connection.php), including empty optional fields", async () => {
+    it("registration accepts exactly what the WordPress plugin sends (class-flipick-vg-connection.php), including empty optional fields", async () => {
       const pluginBody = { baseUrl: base0() + "/shop2", consumerKey: "good-key", consumerSecret: "good-secret", merchantName: "Plugin Shop & Sons", contactEmail: "owner@shop.test", countryCode: "IN", wooVersion: "9.4.1", extensionVersion: "1.0.0" };
       ok(await h.api("POST", "/api/v1/register", { body: pluginBody }));
       ok(await h.api("POST", "/api/v1/register", { body: { ...pluginBody, countryCode: "", wooVersion: "", merchantName: "" } }));

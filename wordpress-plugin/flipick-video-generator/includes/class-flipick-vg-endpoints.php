@@ -13,7 +13,7 @@ defined('ABSPATH') || exit;
  * FLIPICK_ADAPTER_SERVER_URL in wp-config.php. The admin screen does not show these and a merchant installing from the
  * WordPress or WooCommerce directory never has them, so the constants below always apply to merchants.
  */
-final class FVG_Endpoints {
+final class Flipick_VG_Endpoints {
     /** Where an admin's BROWSER reaches the adapter (loaded in the frame of the Video Generator page). Must be https in production. */
     const ADAPTER_URL = 'https://woocommerce.flipickvideogenerator.com';
 
@@ -33,6 +33,10 @@ final class FVG_Endpoints {
         $server = self::pick(defined('FLIPICK_ADAPTER_SERVER_URL') ? FLIPICK_ADAPTER_SERVER_URL : '', self::ADAPTER_SERVER_URL);
         return $server !== '' ? untrailingslashit($server) : self::browser_url();
     }
+
+    /** The service's public legal pages, shown before a store is connected and in the privacy-policy text. Must be live before the plugin is submitted. */
+    const TERMS_URL = 'https://flipickvideogenerator.com/terms/';
+    const PRIVACY_URL = 'https://flipickvideogenerator.com/privacy/';
 
     /** Only http(s) addresses are ever used; anything else counts as "not set". */
     public static function is_valid($url) {

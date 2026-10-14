@@ -34,7 +34,7 @@ Scripted:
 
 ```bash
 docker compose --env-file .env run --rm -T wpcli wp eval \
-  'var_dump(FVG_Connection::connect("http://host.docker.internal:4300", "http://localhost:4300"));' --user=admin
+  'var_dump(Flipick_VG_Connection::connect("http://host.docker.internal:4300", "http://localhost:4300"));' --user=admin
 ```
 
 Webhook deliveries run through WooCommerce's Action Scheduler (WP-Cron, triggered by page loads). To flush them now:

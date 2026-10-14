@@ -23,7 +23,7 @@ async function http(url, opts = {}) {
 const form = (o) => new URLSearchParams(o).toString();
 const post = (url, o) => http(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: form(o) });
 const nonceFor = (html, action) => { const m = html.replace(/\s+/g, " ").match(new RegExp(`value="${action}"[^>]*>[^>]*?_wpnonce" value="([a-z0-9]+)"`)); return m && m[1]; };
-const msgOf = (res) => { const l = res.headers.get("location") || ""; return decodeURIComponent((l.match(/fvg_msg=([^&]*)/) || ["", ""])[1].replace(/\+/g, " ")); };
+const msgOf = (res) => { const l = res.headers.get("location") || ""; return decodeURIComponent((l.match(/flipick_vg_msg=([^&]*)/) || ["", ""])[1].replace(/\+/g, " ")); };
 
 (async () => {
   // 1. log in
@@ -34,16 +34,16 @@ const msgOf = (res) => { const l = res.headers.get("location") || ""; return dec
 
   // 2. plugin page. A store that is already connected is disconnected first, so every run starts from the same place.
   let page = await (await http(base + "/wp-admin/admin.php?page=flipick-video-generator")).text();
-  if (/fvg_disconnect/.test(page)) {
-    const d = await post(base + "/wp-admin/admin-post.php", { action: "fvg_disconnect", _wpnonce: nonceFor(page, "fvg_disconnect") });
+  if (/flipick_vg_disconnect/.test(page)) {
+    const d = await post(base + "/wp-admin/admin-post.php", { action: "flipick_vg_disconnect", _wpnonce: nonceFor(page, "flipick_vg_disconnect") });
     step("disconnect the already connected store", /disconnected/i.test(msgOf(d)), msgOf(d));
     page = await (await http(base + "/wp-admin/admin.php?page=flipick-video-generator")).text();
   }
   step("plugin menu opens and shows the connect form", /Connect store/.test(page) && /Adapter URL/.test(page));
 
   // 3. connect
-  const connect = await post(base + "/wp-admin/admin-post.php", { action: "fvg_connect", _wpnonce: nonceFor(page, "fvg_connect"), adapter_url: serverAdapter, public_url: adapter });
-  step("Connect store", /connected/i.test(msgOf(connect)) && /fvg_type=success/.test(connect.headers.get("location") || ""), msgOf(connect));
+  const connect = await post(base + "/wp-admin/admin-post.php", { action: "flipick_vg_connect", _wpnonce: nonceFor(page, "flipick_vg_connect"), adapter_url: serverAdapter, public_url: adapter });
+  step("Connect store", /connected/i.test(msgOf(connect)) && /flipick_vg_type=success/.test(connect.headers.get("location") || ""), msgOf(connect));
   page = await (await http(base + "/wp-admin/admin.php?page=flipick-video-generator")).text();
   const iframe = (page.match(/<iframe[^>]*src="([^"]+)"/) || [])[1];
   step("connected page frames the generator", !!iframe && /Connected on/.test(page));
@@ -51,9 +51,9 @@ const msgOf = (res) => { const l = res.headers.get("location") || ""; return dec
   // 4. other admin screens and actions
   const billing = await (await http(base + "/wp-admin/admin.php?page=flipick-video-generator-billing")).text();
   step("Plans & Billing page frames the adapter", /<iframe/.test(billing));
-  const refresh = await post(base + "/wp-admin/admin-post.php", { action: "fvg_refresh", _wpnonce: nonceFor(page, "fvg_refresh") });
+  const refresh = await post(base + "/wp-admin/admin-post.php", { action: "flipick_vg_refresh", _wpnonce: nonceFor(page, "flipick_vg_refresh") });
   step("Refresh products", /Reloaded 7 products/.test(msgOf(refresh)), msgOf(refresh));
-  const resync = await post(base + "/wp-admin/admin-post.php", { action: "fvg_resync", _wpnonce: nonceFor(page, "fvg_resync") });
+  const resync = await post(base + "/wp-admin/admin-post.php", { action: "flipick_vg_resync", _wpnonce: nonceFor(page, "flipick_vg_resync") });
   step("Re-sync store", /re-synced/.test(msgOf(resync)), msgOf(resync));
   const list = await (await http(base + "/wp-admin/edit.php?post_type=product")).text();
   step("product list has the Video column and Generate video action", /Generate video/.test(list) && />Video</.test(list));

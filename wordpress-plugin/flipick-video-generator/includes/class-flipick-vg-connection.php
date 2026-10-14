@@ -9,18 +9,18 @@ defined('ABSPATH') || exit;
  * disconnect(): tells the adapter, deletes the webhooks and revokes the REST key. Local cleanup always completes, even
  *               when the adapter cannot be reached.
  */
-final class FVG_Connection {
+final class Flipick_VG_Connection {
     const WEBHOOK_TOPICS = ['product.created' => 'product created', 'product.updated' => 'product updated', 'product.deleted' => 'product deleted'];
 
     /** @return true|WP_Error */
     public static function connect() {
         try {
-            $adapter_url = FVG_Settings::adapter_url();
-            if (!FVG_Endpoints::is_valid($adapter_url) || !FVG_Endpoints::is_valid(FVG_Settings::adapter_public_url())) {
-                FVG_Logger::error('The adapter address is not a valid http(s) address', ['adapter' => $adapter_url]);
-                return new WP_Error('fvg_bad_url', __('The Flipick service address is missing or invalid in this plugin. Please contact Flipick support.', 'flipick-video-generator'));
+            $adapter_url = Flipick_VG_Settings::adapter_url();
+            if (!Flipick_VG_Endpoints::is_valid($adapter_url) || !Flipick_VG_Endpoints::is_valid(Flipick_VG_Settings::adapter_public_url())) {
+                Flipick_VG_Logger::error('The adapter address is not a valid http(s) address', ['adapter' => $adapter_url]);
+                return new WP_Error('flipick_vg_bad_url', __('The Flipick service address is missing or invalid in this plugin. Please contact Flipick support.', 'flipick-video-generator-for-woocommerce'));
             }
-            FVG_Logger::info('Connecting to adapter', ['adapter' => $adapter_url]);
+            Flipick_VG_Logger::info('Connecting to adapter', ['adapter' => $adapter_url]);
 
             $key = self::create_rest_key();
             if (is_wp_error($key)) {
@@ -28,7 +28,7 @@ final class FVG_Connection {
             }
 
             $user = wp_get_current_user();
-            $result = FVG_Adapter_Client::register([
+            $result = Flipick_VG_Adapter_Client::register([
                 'baseUrl' => untrailingslashit(home_url()),
                 'consumerKey' => $key['ck'],
                 'consumerSecret' => $key['cs'],
@@ -36,7 +36,7 @@ final class FVG_Connection {
                 'contactEmail' => $user && $user->user_email ? $user->user_email : get_option('admin_email'),
                 'countryCode' => substr((string) wc_get_base_location()['country'], 0, 2),
                 'wooVersion' => defined('WC_VERSION') ? WC_VERSION : '',
-                'extensionVersion' => FVG_VERSION,
+                'extensionVersion' => FLIPICK_VG_VERSION,
             ]);
             if (is_wp_error($result)) {
                 self::delete_rest_key($key['id']);
@@ -45,17 +45,17 @@ final class FVG_Connection {
             $body = $result['body'];
             if (empty($body['installKey']) || empty($body['secret'])) {
                 self::delete_rest_key($key['id']);
-                FVG_Logger::error('Adapter registration answered without credentials');
-                return new WP_Error('fvg_bad_response', __('The adapter answered without credentials. Check its logs.', 'flipick-video-generator'));
+                Flipick_VG_Logger::error('Adapter registration answered without credentials');
+                return new WP_Error('flipick_vg_bad_response', __('The adapter answered without credentials. Check its logs.', 'flipick-video-generator-for-woocommerce'));
             }
-            FVG_Settings::update(['install_key' => (string) $body['installKey'], 'connected_at' => time(), 'api_key_id' => (int) $key['id']]);
-            FVG_Settings::set_secret((string) $body['secret']);
+            Flipick_VG_Settings::update(['install_key' => (string) $body['installKey'], 'connected_at' => time(), 'api_key_id' => (int) $key['id']]);
+            Flipick_VG_Settings::set_secret((string) $body['secret']);
             self::create_webhooks((string) $body['installKey'], (string) $body['secret']);
-            FVG_Logger::info('Store connected', ['install' => $body['installKey']]);
+            Flipick_VG_Logger::info('Store connected', ['install' => $body['installKey']]);
             return true;
         } catch (Throwable $e) {
-            FVG_Logger::error('Connect failed', ['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
-            return new WP_Error('fvg_exception', $e->getMessage());
+            Flipick_VG_Logger::error('Connect failed', ['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
+            return new WP_Error('flipick_vg_exception', $e->getMessage());
         }
     }
 
@@ -63,12 +63,12 @@ final class FVG_Connection {
     private static function explain(WP_Error $error) {
         $code = $error->get_error_code();
         $hint = '';
-        if ($code === 'fvg_unreachable') {
-            $hint = __('Check that the adapter is running and that this server can reach the address. In Docker, use host.docker.internal instead of localhost.', 'flipick-video-generator');
-        } elseif ($code === 'fvg_adapter_404' || $code === 'fvg_adapter_405') {
-            $hint = __('That address answered, but it is not the Flipick adapter. Check the adapter address (no extra path, correct port).', 'flipick-video-generator');
-        } elseif (strpos((string) $code, 'fvg_adapter_5') === 0) {
-            $hint = __('The adapter reported an internal error. Try again, and check its logs.', 'flipick-video-generator');
+        if ($code === 'flipick_vg_unreachable') {
+            $hint = __('Check that the adapter is running and that this server can reach the address. In Docker, use host.docker.internal instead of localhost.', 'flipick-video-generator-for-woocommerce');
+        } elseif ($code === 'flipick_vg_adapter_404' || $code === 'flipick_vg_adapter_405') {
+            $hint = __('That address answered, but it is not the Flipick adapter. Check the adapter address (no extra path, correct port).', 'flipick-video-generator-for-woocommerce');
+        } elseif (strpos((string) $code, 'flipick_vg_adapter_5') === 0) {
+            $hint = __('The adapter reported an internal error. Try again, and check its logs.', 'flipick-video-generator-for-woocommerce');
         }
         return $hint === '' ? $error : new WP_Error($code, $error->get_error_message() . ' — ' . $hint, $error->get_error_data());
     }
@@ -76,30 +76,30 @@ final class FVG_Connection {
     /** @return true */
     public static function disconnect() {
         try {
-            if (FVG_Settings::is_connected()) {
-                $result = FVG_Adapter_Client::signed('POST', '/api/v1/uninstall', new stdClass());
+            if (Flipick_VG_Settings::is_connected()) {
+                $result = Flipick_VG_Adapter_Client::signed('POST', '/api/v1/uninstall', new stdClass());
                 if (is_wp_error($result)) {
-                    FVG_Logger::warning('Adapter was not told about the disconnect', ['error' => $result->get_error_message()]);
+                    Flipick_VG_Logger::warning('Adapter was not told about the disconnect', ['error' => $result->get_error_message()]);
                 }
             }
-            foreach ((array) FVG_Settings::get('webhook_ids', []) as $id) {
+            foreach ((array) Flipick_VG_Settings::get('webhook_ids', []) as $id) {
                 $webhook = wc_get_webhook((int) $id);
                 if ($webhook) {
                     $webhook->delete(true);
                 }
             }
-            self::delete_rest_key((int) FVG_Settings::get('api_key_id', 0));
+            self::delete_rest_key((int) Flipick_VG_Settings::get('api_key_id', 0));
         } catch (Throwable $e) {
-            FVG_Logger::error('Disconnect cleanup hit an error', ['error' => $e->getMessage()]);
+            Flipick_VG_Logger::error('Disconnect cleanup hit an error', ['error' => $e->getMessage()]);
         }
-        FVG_Settings::clear_connection();
-        FVG_Logger::info('Store disconnected');
+        Flipick_VG_Settings::clear_connection();
+        Flipick_VG_Logger::info('Store disconnected');
         return true;
     }
 
     /** Re-reads the store at the adapter (currency changes etc.). @return true|WP_Error */
     public static function resync() {
-        $result = FVG_Adapter_Client::signed('POST', '/api/v1/stores/sync', new stdClass());
+        $result = Flipick_VG_Adapter_Client::signed('POST', '/api/v1/stores/sync', new stdClass());
         return is_wp_error($result) ? $result : true;
     }
 
@@ -108,6 +108,7 @@ final class FVG_Connection {
         global $wpdb;
         $ck = 'ck_' . wc_rand_hash();
         $cs = 'cs_' . wc_rand_hash();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- WooCommerce has no function to create an API key for the logged-in user; this is the table WooCommerce itself writes (woocommerce_api_keys), and a write needs no cache.
         $ok = $wpdb->insert($wpdb->prefix . 'woocommerce_api_keys', [
             'user_id' => get_current_user_id(),
             'description' => 'Flipick Video Generator',
@@ -117,8 +118,8 @@ final class FVG_Connection {
             'truncated_key' => substr($ck, -7),
         ]);
         if (!$ok) {
-            FVG_Logger::error('Could not create a WooCommerce REST key', ['db_error' => $wpdb->last_error]);
-            return new WP_Error('fvg_key', __('Could not create a WooCommerce API key.', 'flipick-video-generator'));
+            Flipick_VG_Logger::error('Could not create a WooCommerce REST key', ['db_error' => $wpdb->last_error]);
+            return new WP_Error('flipick_vg_key', __('Could not create a WooCommerce API key.', 'flipick-video-generator-for-woocommerce'));
         }
         return ['id' => (int) $wpdb->insert_id, 'ck' => $ck, 'cs' => $cs];
     }
@@ -126,6 +127,7 @@ final class FVG_Connection {
     private static function delete_rest_key($id) {
         global $wpdb;
         if ($id > 0) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- removes the key this plugin created; WooCommerce has no function for it.
             $wpdb->delete($wpdb->prefix . 'woocommerce_api_keys', ['key_id' => $id]);
         }
     }
@@ -133,7 +135,7 @@ final class FVG_Connection {
     /** Signed with the install secret; the adapter verifies X-WC-Webhook-Signature and de-duplicates by delivery id. */
     private static function create_webhooks($install_key, $secret) {
         $ids = [];
-        $url = FVG_Settings::adapter_url() . '/api/webhooks/woocommerce/' . rawurlencode($install_key);
+        $url = Flipick_VG_Settings::adapter_url() . '/api/webhooks/woocommerce/' . rawurlencode($install_key);
         foreach (self::WEBHOOK_TOPICS as $topic => $label) {
             try {
                 $webhook = new WC_Webhook();
@@ -145,9 +147,9 @@ final class FVG_Connection {
                 $webhook->set_status('active');
                 $ids[] = $webhook->save();
             } catch (Throwable $e) {
-                FVG_Logger::warning('Could not create webhook', ['topic' => $topic, 'error' => $e->getMessage()]);
+                Flipick_VG_Logger::warning('Could not create webhook', ['topic' => $topic, 'error' => $e->getMessage()]);
             }
         }
-        FVG_Settings::update(['webhook_ids' => $ids]);
+        Flipick_VG_Settings::update(['webhook_ids' => $ids]);
     }
 }

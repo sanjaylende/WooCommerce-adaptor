@@ -18,7 +18,7 @@ const SHOTS = process.env.QA_SHOTS || DIR;
   await ctx.route(/icici/, (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<h1>bank stub</h1>' }));
 
   // start from "not connected yet": drop the plugin's stored connection settings so the Connect form is shown, as on a fresh install
-  wpcli('option', 'delete', 'fvg_settings');
+  wpcli('option', 'delete', 'flipick_vg_settings');
 
   stage = 'admin login';
   await login(page);
@@ -28,7 +28,7 @@ const SHOTS = process.env.QA_SHOTS || DIR;
   const instBefore = sql("select count(*) from installations where status='active'");
   await page.goto(`${WP}/wp-admin/admin.php?page=flipick-video-generator`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#submit', { timeout: 30000 });
-  ok('1b. the Connect page has no address fields (addresses are constants in the plugin)', (await page.locator('#fvg_adapter_url, #fvg_public_url').count()) === 0);
+  ok('1b. the Connect page has no address fields (addresses are constants in the plugin)', (await page.locator('#flipick_vg_adapter_url, #flipick_vg_public_url').count()) === 0);
   await shot(page, 'wj-0-connect.png');
   await page.click('#submit');
   await page.waitForLoadState('domcontentloaded');

@@ -1,6 +1,14 @@
 <?php
 defined('ABSPATH') || exit;
 
+/*
+ * Why this file uses PHP's own file functions instead of WP_Filesystem: the log is written under wp-content/uploads on the SAME server as WordPress,
+ * on every request that logs something, and it needs an exclusive lock (flock) and an atomic rename() so that two requests never interleave or
+ * lose a line while the file is rotated and zipped. WP_Filesystem has no locking and no atomic rename (and may ask for FTP credentials), so it cannot
+ * do this. Only the plugin's own log folder is touched. error_log() is the last resort when that folder cannot be written, so a message is never lost.
+ */
+// phpcs:disable WordPress.WP.AlternativeFunctions, WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
 /**
  * Log file with rotation.
  *
@@ -14,7 +22,7 @@ defined('ABSPATH') || exit;
  * (Magento cron / WP-Cron) calls rotateIfDue() so a quiet system still rotates at 00:05. A crash between the rename and the zip
  * leaves a ".rotating-*" file that the next call zips. Nothing in here ever throws: logging must not break the application.
  */
-final class FVG_Log_Rotator
+final class Flipick_VG_Log_Rotator
 {
     public const DEFAULT_MAX_BYTES = 10485760; // 10 MB
     public const DEFAULT_ROTATE_AT = '00:05';

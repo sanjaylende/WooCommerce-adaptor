@@ -5,16 +5,16 @@ defined('ABSPATH') || exit;
  * Plugin log: wp-content/uploads/flipick-video-generator-logs/flipick-video-generator.log
  *
  * Rotated every day at 00:05:00 (site timezone) and at once when the file passes 10 MB; the old file is zipped and a new one
- * started (see FVG_Log_Rotator). The folder is closed to the web (.htaccess + index.php); logs are listed and downloaded from
+ * started (see Flipick_VG_Log_Rotator). The folder is closed to the web (.htaccess + index.php); logs are listed and downloaded from
  * WooCommerce > Video Generator. Context values whose key looks like a secret are redacted. Logging never throws.
  *
- * Filters: fvg_log_max_bytes (default 10485760), fvg_log_rotate_at (default "00:05"), fvg_log_retention_days (default 0 = keep).
+ * Filters: flipick_vg_log_max_bytes (default 10485760), flipick_vg_log_rotate_at (default "00:05"), flipick_vg_log_retention_days (default 0 = keep).
  */
-final class FVG_Logger {
+final class Flipick_VG_Logger {
     const SOURCE = 'flipick-video-generator';
-    const CRON_HOOK = 'fvg_rotate_logs';
+    const CRON_HOOK = 'flipick_vg_rotate_logs';
 
-    /** @var FVG_Log_Rotator|null */
+    /** @var Flipick_VG_Log_Rotator|null */
     private static $rotator = null;
     /** @var bool */
     private static $broken = false;
@@ -39,7 +39,7 @@ final class FVG_Logger {
                 return;
             }
             // The log folder is not writable: fall back to PHP's error log rather than lose the message.
-            error_log('[' . self::SOURCE . '] ' . $line);
+            error_log('[' . self::SOURCE . '] ' . $line); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- last resort when the log folder cannot be written
         } catch (Throwable $e) {
             // Logging must never break the request.
         }
@@ -50,7 +50,7 @@ final class FVG_Logger {
         return rtrim($uploads['basedir'], '/\\') . '/flipick-video-generator-logs';
     }
 
-    /** @return FVG_Log_Rotator|null */
+    /** @return Flipick_VG_Log_Rotator|null */
     public static function rotator() {
         if (self::$rotator || self::$broken) {
             return self::$rotator;
@@ -62,13 +62,13 @@ final class FVG_Logger {
                 return null;
             }
             self::protect($dir);
-            self::$rotator = new FVG_Log_Rotator(
+            self::$rotator = new Flipick_VG_Log_Rotator(
                 $dir,
                 self::SOURCE,
-                (int) apply_filters('fvg_log_max_bytes', FVG_Log_Rotator::DEFAULT_MAX_BYTES),
-                (string) apply_filters('fvg_log_rotate_at', FVG_Log_Rotator::DEFAULT_ROTATE_AT),
+                (int) apply_filters('flipick_vg_log_max_bytes', Flipick_VG_Log_Rotator::DEFAULT_MAX_BYTES),
+                (string) apply_filters('flipick_vg_log_rotate_at', Flipick_VG_Log_Rotator::DEFAULT_ROTATE_AT),
                 wp_timezone(),
-                (int) apply_filters('fvg_log_retention_days', 0)
+                (int) apply_filters('flipick_vg_log_retention_days', 0)
             );
         } catch (Throwable $e) {
             self::$broken = true;
@@ -78,7 +78,7 @@ final class FVG_Logger {
 
     /** Keeps the folder closed to the web: logs can hold URLs and ids. */
     private static function protect($dir) {
-        if (!is_writable($dir)) {
+        if (!wp_is_writable($dir)) {
             return;
         }
         if (!is_file($dir . '/.htaccess')) {
@@ -89,7 +89,7 @@ final class FVG_Logger {
         }
     }
 
-    // The hooks for the daily job (fvg_rotate_logs and the check on init) are added in flipick-video-generator.php so this class loads only when needed.
+    // The hooks for the daily job (flipick_vg_rotate_logs and the check on init) are added in flipick-video-generator.php so this class loads only when needed.
 
     public static function ensure_scheduled() {
         try {
@@ -116,7 +116,7 @@ final class FVG_Logger {
                 wp_schedule_single_event($rotator->nextBoundary(), self::CRON_HOOK);
             }
         } catch (Throwable $e) {
-            error_log('[' . self::SOURCE . '] scheduled log rotation failed: ' . $e->getMessage());
+            error_log('[' . self::SOURCE . '] scheduled log rotation failed: ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- last resort when the log folder cannot be written
         }
     }
 

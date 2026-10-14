@@ -1,0 +1,7 @@
+/* Flipick Video Generator: styles for its wp-admin page (loaded on that page only). */
+.flipick-vg-logs { margin: 12px 0; }
+.flipick-vg-logs table { max-width: 720px; }
+.flipick-vg-inline-form { display: inline-block; margin-left: 8px; }
+.flipick-vg-frame { width: 100%; height: calc(100vh - 220px); min-height: 640px; border: 1px solid #c3c4c7; background: #fff; }
+.flipick-vg-disclosure { max-width: 760px; }
+.flipick-vg-disclosure li { margin-bottom: 4px; }

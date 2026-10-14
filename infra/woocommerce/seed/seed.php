@@ -132,7 +132,7 @@ foreach ($photos as $sku => $display_name) {
         $prod->set_slug('');
         echo "Renamed {$sku} to {$display_name}\n";
     }
-    if ($prod->get_meta('_fvg_seed_photo') !== $sum) {
+    if ($prod->get_meta('_flipick_vg_seed_photo') !== $sum) {
         $old = $prod->get_image_id();
         $dir = wp_upload_dir();
         $target = wp_unique_filename($dir['path'], sanitize_title($display_name) . '.jpg');
@@ -140,7 +140,7 @@ foreach ($photos as $sku => $display_name) {
         $att = wp_insert_attachment(['post_mime_type' => 'image/jpeg', 'post_title' => $display_name, 'post_status' => 'inherit'], trailingslashit($dir['path']) . $target);
         wp_update_attachment_metadata($att, wp_generate_attachment_metadata($att, trailingslashit($dir['path']) . $target));
         $prod->set_image_id($att);
-        $prod->update_meta_data('_fvg_seed_photo', $sum);
+        $prod->update_meta_data('_flipick_vg_seed_photo', $sum);
         if ($old) {
             $old_file = get_attached_file($old);
             if ($old_file && strpos(basename($old_file), 'seed-') === 0) { wp_delete_attachment($old, true); }
