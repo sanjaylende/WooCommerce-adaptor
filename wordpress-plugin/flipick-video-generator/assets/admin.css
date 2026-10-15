@@ -2,6 +2,11 @@
 .flipick-vg-logs { margin: 12px 0; }
 .flipick-vg-logs table { max-width: 720px; }
 .flipick-vg-inline-form { display: inline-block; margin-left: 8px; }
+/* On the plugin's own page only the Flipick app is shown: notices that WordPress, WooCommerce and other plugins print (update available, Action Scheduler past-due actions, ...) are hidden here. WordPress moves notices under the page title with JavaScript, so they are matched anywhere in the content area. The plugin's own messages carry the class flipick-vg-notice and stay visible. */
+.woocommerce_page_flipick-video-generator #wpbody-content .notice:not(.flipick-vg-notice),
+.woocommerce_page_flipick-video-generator #wpbody-content .update-nag,
+.woocommerce_page_flipick-video-generator #wpbody-content div.updated:not(.flipick-vg-notice),
+.woocommerce_page_flipick-video-generator #wpbody-content div.error:not(.flipick-vg-notice) { display: none; }
 .flipick-vg-frame { width: 100%; height: calc(100vh - 220px); min-height: 640px; border: 1px solid #c3c4c7; background: #fff; }
 .flipick-vg-disclosure { max-width: 760px; }
 .flipick-vg-disclosure li { margin-bottom: 4px; }

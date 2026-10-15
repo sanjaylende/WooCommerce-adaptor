@@ -13,13 +13,17 @@ final class Flipick_VG_Admin {
         add_action('admin_init', [$this, 'privacy_policy_content']);
         add_action('admin_post_flipick_vg_connect', [$this, 'handle_connect']);
         add_action('admin_post_flipick_vg_disconnect', [$this, 'handle_disconnect']);
-        add_action('admin_post_flipick_vg_resync', [$this, 'handle_resync']);
-        add_action('admin_post_flipick_vg_refresh', [$this, 'handle_refresh']);
         add_action('admin_post_flipick_vg_download_log', [$this, 'handle_download_log']);
         add_filter('manage_edit-product_columns', [$this, 'column']);
         add_action('manage_product_posts_custom_column', [$this, 'column_content'], 10, 2);
         add_filter('post_row_actions', [$this, 'row_action'], 10, 2);
         add_filter('plugin_action_links_' . plugin_basename(FLIPICK_VG_FILE), function ($links) {
+            if (Flipick_VG_Settings::is_connected() && current_user_can(self::CAP)) {
+                array_unshift(
+                    $links,
+                    '<a class="flipick-vg-disconnect-link" href="' . esc_url(wp_nonce_url(admin_url('admin-post.php?action=flipick_vg_disconnect'), 'flipick_vg_disconnect')) . '" data-confirm="' . esc_attr__('Disconnect this store from Flipick? Existing videos on product pages stay.', 'flipick-video-generator') . '">' . esc_html__('Disconnect', 'flipick-video-generator') . '</a>'
+                );
+            }
             array_unshift($links, '<a href="' . esc_url(self::page_url()) . '">' . esc_html__('Flipick Video Generator', 'flipick-video-generator') . '</a>');
             return $links;
         });
@@ -35,6 +39,10 @@ final class Flipick_VG_Admin {
 
     /** Style and script of the plugin's own page, loaded on that page only. */
     public function assets($hook) {
+        if ($hook === 'plugins.php') {
+            wp_enqueue_script('flipick-vg-admin', plugins_url('assets/admin.js', FLIPICK_VG_FILE), [], FLIPICK_VG_VERSION, true);
+            return;
+        }
         if ($hook !== 'woocommerce_page_' . self::SLUG) {
             return;
         }
@@ -74,7 +82,7 @@ final class Flipick_VG_Admin {
             echo '</div>';
         } catch (Throwable $e) {
             Flipick_VG_Logger::error('Admin page failed to render', ['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
-            echo '<div class="notice notice-error"><p>' . esc_html__('Something went wrong. Details are in WooCommerce > Status > Logs (flipick-video-generator).', 'flipick-video-generator') . '</p></div>';
+            echo '<div class="notice notice-error flipick-vg-notice"><p>' . esc_html__('Something went wrong. Details are in WooCommerce > Status > Logs (flipick-video-generator).', 'flipick-video-generator') . '</p></div>';
         }
     }
 
@@ -137,7 +145,7 @@ final class Flipick_VG_Admin {
         $notice = get_transient($key);
         if (is_array($notice) && !empty($notice['message'])) {
             delete_transient($key);
-            printf('<div class="notice notice-%s is-dismissible"><p>%s</p></div>', esc_attr($notice['type'] === 'error' ? 'error' : 'success'), esc_html($notice['message']));
+            printf('<div class="notice notice-%s is-dismissible flipick-vg-notice"><p>%s</p></div>', esc_attr($notice['type'] === 'error' ? 'error' : 'success'), esc_html($notice['message']));
         }
     }
 
@@ -175,29 +183,8 @@ final class Flipick_VG_Admin {
         $launch = Flipick_VG_Adapter_Client::launch_token();
         $src = Flipick_VG_Settings::adapter_public_url() . '/?embed=1&launch=' . rawurlencode($launch) . ($focus ? '&product=' . rawurlencode('woo-' . $focus) : '');
         ?>
-        <p>
-            <?php
-            printf(
-                /* translators: %s: date */
-                esc_html__('Connected on %s.', 'flipick-video-generator'),
-                esc_html(wp_date(get_option('date_format') . ' ' . get_option('time_format'), (int) Flipick_VG_Settings::get('connected_at')))
-            );
-            ?>
-            <?php $this->post_button('flipick_vg_refresh', __('Refresh products', 'flipick-video-generator'), 'secondary small'); ?>
-            <?php $this->post_button('flipick_vg_resync', __('Re-sync store', 'flipick-video-generator'), 'secondary small'); ?>
-            <?php $this->post_button('flipick_vg_disconnect', __('Disconnect', 'flipick-video-generator'), 'link-delete small', __('Disconnect this store from Flipick? Existing videos on product pages stay.', 'flipick-video-generator')); ?>
-        </p>
         <iframe class="flipick-vg-frame" title="<?php esc_attr_e('Flipick Video Generator', 'flipick-video-generator'); ?>" src="<?php echo esc_url($src); ?>" referrerpolicy="strict-origin"></iframe>
         <?php
-    }
-
-    private function post_button($action, $label, $class, $confirm = '') {
-        echo '<form method="post" class="flipick-vg-inline-form" action="' . esc_url(admin_url('admin-post.php')) . '"'
-            . ($confirm ? ' data-confirm="' . esc_attr($confirm) . '"' : '') . '>';
-        echo '<input type="hidden" name="action" value="' . esc_attr($action) . '">';
-        wp_nonce_field($action);
-        submit_button($label, $class, 'submit', false);
-        echo '</form>';
     }
 
     private function back($message, $type = 'success') {
@@ -227,28 +214,6 @@ final class Flipick_VG_Admin {
         $this->guard('flipick_vg_disconnect');
         Flipick_VG_Connection::disconnect();
         $this->back(__('Store disconnected.', 'flipick-video-generator'));
-    }
-
-    public function handle_resync() {
-        $this->guard('flipick_vg_resync');
-        $result = Flipick_VG_Connection::resync();
-        if (is_wp_error($result)) {
-            /* translators: %s: error message */
-            $this->back(sprintf(__('Re-sync failed: %s', 'flipick-video-generator'), $result->get_error_message()), 'error');
-        }
-        $this->back(__('Store re-synced.', 'flipick-video-generator'));
-    }
-
-    public function handle_refresh() {
-        $this->guard('flipick_vg_refresh');
-        $result = Flipick_VG_Adapter_Client::signed('POST', '/api/refresh', new stdClass());
-        delete_transient(self::STATUS_TRANSIENT);
-        if (is_wp_error($result)) {
-            /* translators: %s: error message */
-            $this->back(sprintf(__('Refresh failed: %s', 'flipick-video-generator'), $result->get_error_message()), 'error');
-        }
-        /* translators: %d: number of products */
-        $this->back(sprintf(__('Reloaded %d products from WooCommerce.', 'flipick-video-generator'), (int) ($result['body']['count'] ?? 0)));
     }
 
     /**

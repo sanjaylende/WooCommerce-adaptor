@@ -22,7 +22,7 @@ What you get:
 * A **Flipick Video Generator** page under WooCommerce, where you connect the store and use the Flipick app.
 * A **Video** column and a **Generate video** row action on the products list.
 * The published video shown after the product summary on the product page, or anywhere with the shortcode `[flipick_video id="123"]`.
-* Connect, Disconnect and Re-sync buttons. Disconnect removes the WooCommerce API key the plugin created.
+* Connect on the plugin page; **Disconnect** is a link next to Deactivate on the Plugins screen and removes the WooCommerce API key the plugin created.
 * Compatibility with High-Performance Order Storage (the plugin never touches orders).
 * Log files you can download from the plugin page, rotated daily and by size (see the FAQ).
 
