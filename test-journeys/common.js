@@ -14,7 +14,21 @@ function wpCreds() {
   const get = (k) => (txt.match(new RegExp('^' + k + '=(.*)$', 'm')) || [])[1];
   return { user: (get('WP_ADMIN_USER') || 'admin').trim(), pass: (get('WP_ADMIN_PASSWORD') || '').trim() };
 }
-const sql = (q) => execFileSync('docker', ['exec', '-i', 'woocommerce-adaptor-db-1', 'psql', '-U', 'adapter_owner', '-d', process.env.QA_DB || 'woocommerce_adapter', '-At'], { input: q, encoding: 'utf8', env: E }).trim();
+// The adapter's database is its own schema in the shared PostgreSQL: query it with the local psql as the owner role (from the adapter's .env).
+function adapterDb() {
+  const txt = fs.readFileSync(path.join(DIR, '..', '.env'), 'utf8');
+  const get = (k) => (txt.match(new RegExp('^' + k + '=(.*)$', 'm')) || [])[1];
+  // The regression harness passes the scratch database it created (QA_DB_ADMIN_URL / QA_DB_SCHEMA); otherwise the adapter's own .env.
+  const u = new URL((process.env.QA_DB_ADMIN_URL || get('DATABASE_ADMIN_URL') || '').trim());
+  return { host: u.hostname, port: u.port || '5432', user: decodeURIComponent(u.username), password: decodeURIComponent(u.password), database: u.pathname.slice(1), schema: (process.env.QA_DB_SCHEMA || get('DB_SCHEMA') || 'woocommerce_adapter').trim() };
+}
+const sql = (q) => {
+  const d = adapterDb();
+  // "app.bypass" lets this staff-like session see every tenant (row-level security is forced on the tables); its "on" answer is dropped.
+  const out = execFileSync('C:/Program Files/PostgreSQL/17/bin/psql.exe', ['-h', d.host, '-p', d.port, '-U', d.user, '-d', process.env.QA_DB || d.database, '-At', '-q', '-v', 'ON_ERROR_STOP=1'],
+    { input: "select set_config('app.bypass','on',false);\n" + q, encoding: 'utf8', env: { ...E, PGPASSWORD: d.password, PGOPTIONS: '-c search_path=' + d.schema } });
+  return out.replace(/^on\r?\n/, '').trim();
+};
 const maria = (q) => execFileSync('docker', ['exec', '-i', 'woocommerce-local-db-1', 'sh', '-c', 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" "$MARIADB_DATABASE" -N'], { input: q, encoding: 'utf8', env: E }).trim();
 
 function reporter() {

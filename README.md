@@ -17,8 +17,9 @@ Feature notes, auth modes and known gaps: [docs/adapters/woocommerce.md](docs/ad
 ## Run locally
 
 ```bash
-# 1. adapter database (PostgreSQL on 127.0.0.1:5435)
-docker compose up -d db
+# 1. adapter database: its own schema "woocommerce_adapter" in the shared PostgreSQL database ltx_1jnl (127.0.0.1:5432),
+#    created once by a database administrator (see "Database" below)
+DATABASE_SUPERUSER_URL=postgresql://<admin>@127.0.0.1:5432/ltx_1jnl node scripts/db/provision.js
 
 # 2. a WooCommerce store to test against (WordPress on http://localhost:8085), seeded, with API keys
 cd infra/woocommerce && cp .env.example .env && ./setup.sh && node verify.js && cd ../..
@@ -76,10 +77,24 @@ Written to the console and to `logs/app.log` (everything) and `logs/error.log` (
 process was down at 00:05 the old file is rotated at the next start. Settings: `LOG_TO_FILE`, `LOG_DIR`, `LOG_MAX_BYTES`, `LOG_ROTATE_AT`,
 `LOG_RETENTION_DAYS` (0 = keep all archives), `LOG_LEVEL`, `LOG_FORMAT`. Secrets are redacted.
 
+## Database
+
+The adapter keeps its data in its **own schema** (`DB_SCHEMA`, default `woocommerce_adapter`) of the PostgreSQL database `ltx_1jnl`,
+next to `shopify_adapter` and the other applications' schemas, which it never reads or changes. Every connection is opened with
+`search_path` set to that schema, so nothing can fall back to `public`; the migration history (`schema_migrations`) is inside the schema.
+
+- `scripts/db/provision.js`: run once by a database administrator (`DATABASE_SUPERUSER_URL`, never stored in `.env`). Creates the schema and two
+  dedicated least-privilege roles (owner for migrations, service role for the app; no superuser, no BYPASSRLS, no access to other schemas). Idempotent.
+- `scripts/db/migrate.js`: applies pending migrations (the service also does so at start-up).
+- `scripts/db/move-data.js`: one-off, repeatable move from the old database (`SOURCE_DATABASE_URL`, read only): copies every table in one
+  snapshot with primary keys and sequences preserved, refuses a non-empty target, then prints row counts and md5 checksums per table.
+  `--verify-only` just compares. Stop the adapter while it runs.
+- `DB_POOL_MAX` (default 8) keeps the service's share of the shared server's connections small. `DB_SSL=require` for any non-local server.
+- Rollback: set `DATABASE_URL` / `DATABASE_ADMIN_URL` back to the old database (`docker compose up -d db`, port 5435) and `DB_SCHEMA=public`.
+
 ## Deploying
 
-Needs a public HTTPS address (`PUBLIC_BASE_URL`), managed PostgreSQL (create the `adapter_app` role as in
-`docker/db-init/01-app-role.sql`), `ADAPTER_SECRET_KEY` and the other secrets from the environment, and `NODE_ENV=production`
+Needs a public HTTPS address (`PUBLIC_BASE_URL`), managed PostgreSQL (create the schema and roles with `scripts/db/provision.js`, set `DB_SSL=require`), `ADAPTER_SECRET_KEY` and the other secrets from the environment, and `NODE_ENV=production`
 (which also blocks private-network store URLs at registration). It scales out: sessions, rate limits, nonces, idempotency keys and
 webhook de-duplication all live in PostgreSQL, not process memory; the only per-process state is the product-list cache, rebuilt on
 demand. Back up the database; the secret key is needed to read stored credentials.
