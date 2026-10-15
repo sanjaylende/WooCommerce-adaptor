@@ -1,6 +1,6 @@
-# LEGACY / ROLLBACK ONLY. The adapter's data now lives in its own schema (woocommerce_adapter) of the shared PostgreSQL database
-# ltx_1jnl on 127.0.0.1:5432 (see README, "Database"). This container is no longer started; start it only to roll back
-# (docker compose up -d db, then point DATABASE_URL / DATABASE_ADMIN_URL at 5435 and set DB_SCHEMA=public).
+# LEGACY. The adapter's data lives in its own schema (woocommerce_adapter) of the shared PostgreSQL database ltx_1jnl on
+# 127.0.0.1:5432 (see README, "Database"). This container is not used any more (its volume was removed on 2026-10-15); the file is
+# kept only so the legacy layout (schema public, docker/db-init) can be recreated if ever needed.
 name: woocommerce-adaptor
 services:
   db:

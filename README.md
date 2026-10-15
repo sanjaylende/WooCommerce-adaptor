@@ -90,7 +90,8 @@ next to `shopify_adapter` and the other applications' schemas, which it never re
   snapshot with primary keys and sequences preserved, refuses a non-empty target, then prints row counts and md5 checksums per table.
   `--verify-only` just compares. Stop the adapter while it runs.
 - `DB_POOL_MAX` (default 8) keeps the service's share of the shared server's connections small. `DB_SSL=require` for any non-local server.
-- Rollback: set `DATABASE_URL` / `DATABASE_ADMIN_URL` back to the old database (`docker compose up -d db`, port 5435) and `DB_SCHEMA=public`.
+- The old single-purpose database (docker, port 5435) was removed on 2026-10-15 after the move was verified; its final dump was kept outside the repo.
+  To go back to a database of its own: restore that dump into any PostgreSQL, point `DATABASE_URL` / `DATABASE_ADMIN_URL` at it and set `DB_SCHEMA=public`.
 
 ## Deploying
 
